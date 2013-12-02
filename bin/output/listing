@@ -1,0 +1,14 @@
+1       program example(input, output);
+2       var x: integer; var y: integer;
+3       function gcd(a: integer; b: integer): integer;
+4       begin
+5       	if b = 0 then
+6       		gcd := a
+7           else
+8           	gcd := gcd(b, a mod b)
+9       end;
+10      begin
+11          x := read;
+12          y := write
+13      end.
+14      ÿ
