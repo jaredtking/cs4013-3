@@ -1,4 +1,4 @@
-cs4013 [![Build Status](https://travis-ci.org/jaredtking/cs4013-2.png?branch=master)](https://travis-ci.org/jaredtking/cs4013-2)
+cs4013 [![Build Status](https://travis-ci.org/jaredtking/cs4013-3.png?branch=master)](https://travis-ci.org/jaredtking/cs4013-3)
 ======
 
 Third compilers project for CS4013 at the University of Tulsa
