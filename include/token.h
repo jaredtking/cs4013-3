@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "symbol_table.h"
 
 typedef enum Production
 {
@@ -125,12 +126,6 @@ typedef struct ReservedWord
 	Token *token;
 	struct ReservedWord *next;
 } ReservedWord;
-
-typedef struct SymbolTable
-{
-	char *symbol;
-	struct SymbolTable *next;
-} SymbolTable;
 
 typedef struct MachineResult {
 	char *lexeme;

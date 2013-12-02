@@ -3,12 +3,14 @@
 
 #include "check_machine.h"
 #include "check_token.h"
+#include "check_symbol_table.h"
 
 int main (void)
 {
 	Suite *suites[] = {
 		machine_suite(),
-		token_suite()
+		token_suite(),
+		symbol_table_suite()
 	};
 
 	int retval = EXIT_SUCCESS;
