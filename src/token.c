@@ -46,9 +46,12 @@ MachineResult *get_next_token(ParserData *parser_data, int options)
 		return r;
 	}
 
+	// token file header
+	if (s == NULL && parser_data->tokens != NULL)
+		fprintf (parser_data->tokens, "%-10s%-20s%-20s%s\n", "Line No.", "Lexeme", "TOKEN-TYPE", "ATTRIBUTE");
+
 	// grab another line
-	if (s != parser_data->source || f - l > MAX_LINE_LENGTH || *f == 0)
-	{
+	if (s != parser_data->source || f - l > MAX_LINE_LENGTH || *f == 0) {
 		s = parser_data->source;
 
 		char *line = get_next_line(parser_data->source);
@@ -62,7 +65,7 @@ MachineResult *get_next_token(ParserData *parser_data, int options)
 			fprintf (parser_data->listing, "%-8d%s\n", i, line);
 	}
 
-	MachineResult result = machine_omega(f, parser_data->reserved_words, parser_data->symbol_table);
+	MachineResult result = machine_omega(f, parser_data->reserved_words);
 
 	// do not increment line counter for eof
 	if (result.token->type == TOKEN_EOF) i--;

@@ -23,6 +23,7 @@ START_TEST (test_get_token)
 	ParserData *parser_data = (ParserData *)malloc(sizeof(ParserData));
 	parser_data->tokens = NULL;
 	parser_data->listing = NULL;
+	parser_data->symbols = NULL;
 	parser_data->source = fopen("tests/test_get_token.pas", "r");
 
 	ck_assert(parser_data->source != NULL);
@@ -51,20 +52,17 @@ START_TEST (test_get_token)
 	res = get_next_token (parser_data, TOKEN_OPTION_NOP | TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_ID);
-	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 
 	// NOP
 	for (int i = 0; i < 5; i++) {
 		res = get_next_token (parser_data, TOKEN_OPTION_NOP | TOKEN_OPTION_SQUASH_ERRS);
 		ck_assert(res != NULL);
 		ck_assert(res->token->type == TOKEN_ID);
-		ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 	}
 
 	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_ID);
-	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 
 /*
 	// #

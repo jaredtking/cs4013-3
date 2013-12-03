@@ -11,8 +11,6 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	fprintf(stdout, "-- Lexer begin --\n");
-
 	FILE *f;
 
 	ParserData *parser_data = (ParserData *)malloc(sizeof(ParserData));
@@ -43,7 +41,7 @@ int main(int argc, char **argv)
 	parser_data->reserved_words = head;
 	fclose(f);
 
-	fprintf(stdout,"ok\n");
+	fprintf(stdout, "ok\n");
 
 	/* tokenize input source file */
 
@@ -99,8 +97,16 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	// token file header
-	fprintf (parser_data->tokens, "%-10s%-20s%-20s%s\n", "Line No.", "Lexeme", "TOKEN-TYPE", "ATTRIBUTE");
+	// open symbol table file for writing
+	char *symtable_filename = malloc(strlen(output_dir) + 9);
+	sprintf(symtable_filename, "%s/symtable", output_dir);
+	parser_data->symbols = fopen (symtable_filename, "w");
+
+	if (parser_data->symbols == NULL)
+	{
+		fprintf (stderr, "Can't create symbol table file at %s!\n", symtable_filename);
+		exit(1);
+	}
 
 	// initalize symbol table
 	parser_data->symbol_table = (SymbolTable *)malloc(sizeof(SymbolTable));
@@ -109,6 +115,7 @@ int main(int argc, char **argv)
 
 	fprintf(stdout, "Parsing source file..\n");
 
+	/* most important line in this file */
 	parse(parser_data);
 
 	if (parser_data->result > 0)
@@ -116,36 +123,11 @@ int main(int argc, char **argv)
 	else
 		fprintf(stdout, "Success\n");
 
+	// close up shop
 	fclose(parser_data->source);
 	fclose(parser_data->listing);
 	fclose(parser_data->tokens);
+	fclose(parser_data->symbols);
 
-	// open symbol table file for writing
-	char *symtable_filename = malloc(strlen(output_dir) + 9);
-	sprintf(symtable_filename, "%s/symtable", output_dir);
-	f = fopen (symtable_filename, "w");
-
-	if (f == NULL)
-	{
-		fprintf (stderr, "Can't create symbol table file at %s!\n", symtable_filename);
-		exit(1);
-	}
-
-	// symbol table file header
-	fprintf (f, "%-5s%s\n", "Loc.", "ID");
-
-	// write ids to symbol table
-	SymbolTable *s = parser_data->symbol_table;
-	int i = 0;
-	while (s != NULL && s->symbol != NULL)
-	{
-		fprintf (f, "%-5d%s\n", i, s->symbol);
-
-		i++;
-		s = s->next;
-	}
-
-	fclose(f);
-
-	return(parser_data->result);
+	return parser_data->result;
 }

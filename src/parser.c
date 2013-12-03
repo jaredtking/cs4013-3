@@ -5,6 +5,9 @@ void parse(ParserData *parser_data)
 	parse_program(parser_data);
 
 	match(TOKEN_EOF, parser_data);
+
+	// output symbol table
+	fprint_symbol_table(parser_data->symbols, parser_data->symbol_table);
 }
 
 void match(TokenType t, ParserData *parser_data)

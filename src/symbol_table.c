@@ -28,3 +28,20 @@ int get_sym_table_addr(char *word, SymbolTable *symbol_table, int loc)
 	else
 		return get_sym_table_addr(word, symbol_table->next, loc + 1);
 }
+
+void fprint_symbol_table(FILE *f, SymbolTable *symbol_table)
+{
+	// symbol table file header
+	fprintf (f, "%-5s%s\n", "Loc.", "ID");
+
+	// write ids to symbol table
+	SymbolTable *s = symbol_table;
+	int i = 0;
+	while (s != NULL && s->symbol != NULL)
+	{
+		fprintf (f, "%-5d%s\n", i, s->symbol);
+
+		i++;
+		s = s->next;
+	}
+}

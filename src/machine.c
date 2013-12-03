@@ -1,6 +1,6 @@
 #include "machine.h"
 
-MachineResult machine_omega(char *in, ReservedWord *reserved_words, SymbolTable *symbol_table)
+MachineResult machine_omega(char *in, ReservedWord *reserved_words)
 {
 	/*
 	This machine is the super machine that ties all
@@ -21,7 +21,7 @@ MachineResult machine_omega(char *in, ReservedWord *reserved_words, SymbolTable 
 	{
 		switch (i)
 		{
-		case 1: res = machine_idres(f, reserved_words, symbol_table); break;
+		case 1: res = machine_idres(f, reserved_words); break;
 		case 2: res = machine_longreal(f); break;
 		case 3: res = machine_real(f); break;
 		case 4: res = machine_int(f); break;
@@ -79,7 +79,7 @@ MachineResult machine_whitespace(char *in)
 	return res;
 }
 
-MachineResult machine_idres(char *in, ReservedWord *reserved_words, SymbolTable *symbol_table)
+MachineResult machine_idres(char *in, ReservedWord *reserved_words)
 {
 	char *f = in;
 	int s = 1;
@@ -125,7 +125,6 @@ MachineResult machine_idres(char *in, ReservedWord *reserved_words, SymbolTable 
 					else
 					{
 						res.token->type = TOKEN_ID;
-						res.token->attribute = get_sym_table_addr(word, symbol_table, SYM_TABLE_START_ADDR);
 					}
 				}
 			}

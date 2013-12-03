@@ -21,9 +21,9 @@
 #define MACHINE_ERR_REAL_ZZ_TOO_LONG 6
 #define MACHINE_ERR_NUM_LEADING_ZERO 7
 
-MachineResult machine_omega(char *in, ReservedWord *reserved_words, SymbolTable *symbol_table);
+MachineResult machine_omega(char *in, ReservedWord *reserved_words);
 MachineResult machine_whitespace(char *in);
-MachineResult machine_idres(char *in, ReservedWord *reserved_words, SymbolTable *symbol_table);
+MachineResult machine_idres(char *in, ReservedWord *reserved_words);
 MachineResult machine_int(char *in);
 MachineResult machine_real(char *in);
 MachineResult machine_longreal(char *in);
@@ -35,6 +35,5 @@ int is_numeric(char c);
 int is_plus_or_minus(char c);
 ReservedWord *is_reserved_word(char *word, ReservedWord *reserved_words);
 int is_whitespace(char c);
-int get_sym_table_addr(char *word, SymbolTable *symbol_table, int loc);
 
 #endif

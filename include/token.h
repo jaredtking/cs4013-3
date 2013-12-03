@@ -139,6 +139,7 @@ typedef struct ParserData
 	FILE *listing;
 	FILE *source;
 	FILE *tokens;
+	FILE *symbols;
 	ReservedWord *reserved_words;
 	SymbolTable *symbol_table;
 	int result;
