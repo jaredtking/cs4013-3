@@ -4,50 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "symbol_table.h"
-
-typedef enum Production
-{
-	PRODUCTION_PROGRAM,
-	PRODUCTION_PROGRAM_,
-	PRODUCTION_PROGRAM__,
-	PRODUCTION_ID_LIST,
-	PRODUCTION_ID_LIST_,
-	PRODUCTION_DECLARATIONS,
-	PRODUCTION_DECLARATIONS_,
-	PRODUCTION_TYPE,
-	PRODUCTION_STD_TYPE,
-	PRODUCTION_SUBPROGRAM_DECLARATIONS,
-	PRODUCTION_SUBPROGRAM_DECLARATIONS_,
-	PRODUCTION_SUBPROGRAM_DECLARATION,
-	PRODUCTION_SUBPROGRAM_DECLARATION_,
-	PRODUCTION_SUBPROGRAM_DECLARATION__,
-	PRODUCTION_SUBPROGRAM_HEAD,
-	PRODUCTION_SUBPROGRAM_HEAD_,
-	PRODUCTION_ARGUMENTS,
-	PRODUCTION_PARAM_LIST,
-	PRODUCTION_PARAM_LIST_,
-	PRODUCTION_COMPOUND_STATEMENT,
-	PRODUCTION_COMPOUND_STATEMENT_,
-	PRODUCTION_OPTIONAL_STATEMENTS,
-	PRODUCTION_STATEMENT_LIST,
-	PRODUCTION_STATEMENT_LIST_,
-	PRODUCTION_STATEMENT,
-	PRODUCTION_STATEMENT_,
-	PRODUCTION_VAR,
-	PRODUCTION_VAR_,
-	PRODUCTION_EXPR_LIST,
-	PRODUCTION_EXPR_LIST_,
-	PRODUCTION_EXPR,
-	PRODUCTION_EXPR_,
-	PRODUCTION_SIMPLE_EXPR,
-	PRODUCTION_SIMPLE_EXPR_,
-	PRODUCTION_TERM,
-	PRODUCTION_TERM_,
-	PRODUCTION_FACTOR,
-	PRODUCTION_FACTOR_,
-	PRODUCTION_SIGN
-} Production;
+#include "parser.h"
+#include "machine.h"
 
 typedef enum TokenType
 {
@@ -94,6 +52,16 @@ typedef struct Token
 	int attribute;
 } Token;
 
+typedef struct ReservedWord
+{
+	char *name;
+	Token *token;
+	struct ReservedWord *next;
+} ReservedWord;
+
+struct MachineResult;
+struct ParserData;
+
 #define RESERVED_WORD_DELIM "\t"
 
 #define MAX_LINE_LENGTH 72
@@ -112,46 +80,17 @@ typedef struct Token
 
 #define SYM_TABLE_START_ADDR 2000
 
-#define PARSER_RESULT_OK 0
-#define PARSER_RESULT_LEXERR 1
-#define PARSER_RESULT_SYNERR 2
-
 #define TOKEN_OPTION_NONE 0
 #define TOKEN_OPTION_NOP 2
 #define TOKEN_OPTION_SQUASH_ERRS 4
 
-typedef struct ReservedWord
-{
-	char *name;
-	Token *token;
-	struct ReservedWord *next;
-} ReservedWord;
-
-typedef struct MachineResult {
-	char *lexeme;
-	Token *token;
-	char *f;
-	int line_no;
-} MachineResult;
-
-typedef struct ParserData
-{
-	FILE *listing;
-	FILE *source;
-	FILE *tokens;
-	FILE *symbols;
-	ReservedWord *reserved_words;
-	SymbolTable *symbol_table;
-	int result;
-} ParserData;
-
 char *get_next_line(FILE *source);
-MachineResult *get_next_token(ParserData *parser_data, int options);
+struct MachineResult *get_next_token(struct ParserData *parser_data, int options);
 ReservedWord *tokenize_reserved_word_str (char *line);
 int token_type_to_int (TokenType type);
 TokenType int_to_token_type (int id);
 char *token_type_to_str (TokenType type);
 char *attribute_to_str (int attr);
-void lexerr(MachineResult *result, ParserData *parser_data);
+void lexerr(struct MachineResult *result, struct ParserData *parser_data);
 
 #endif

@@ -10,8 +10,9 @@ int get_sym_table_addr(char *word, SymbolTable *symbol_table, int loc)
 		return loc;
 	}
 	// symbol found
-	else if (strcmp(symbol_table->symbol, word) == 0)
+	else if (strcmp(symbol_table->symbol, word) == 0) {
 		return loc;
+	}
 	// end of non-empty table
 	else if (symbol_table->next == NULL)
 	{
@@ -45,3 +46,5 @@ void fprint_symbol_table(FILE *f, SymbolTable *symbol_table)
 		s = s->next;
 	}
 }
+
+// NOTE get_type should return return type if type = FNAME

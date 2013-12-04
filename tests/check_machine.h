@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <check.h>
-#include "machine.h"
+#include "token.h"
 #include <stdio.h>
 
 #ifndef CHECK_MACHINE_H
