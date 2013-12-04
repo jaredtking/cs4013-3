@@ -13,11 +13,11 @@ typedef enum Type
 	REAL
 } Type;
 
-typedef enum Symbol
+typedef struct Symbol
 {
 	char *name;
 	Type *type;
-}
+} Symbol;
 
 typedef struct SymbolTable
 {
@@ -28,13 +28,15 @@ typedef struct SymbolTable
 	struct SymbolTable *child;
 } SymbolTable;
 
-void check_enter_method(char *name, ParserData *parser_data);
-void check_exit_method(ParserData *parser_data);
-void set_method_type(Type type, ParserData *parser_data);
-void set_method_param_count(int n, ParserData *parser_data);
-void check_add_prog_param(char *name, Type type, ParserData *parser_data);
-void check_add_fun_param(char *name, Type type, ParserData *parser_data);
-void check_add_var(char *name, Type type, ParserData *parser_data);
+struct ParserData;
+
+void check_enter_method(char *name, struct ParserData *parser_data);
+void check_exit_method(struct ParserData *parser_data);
+void set_method_type(Type type, struct ParserData *parser_data);
+void set_method_param_count(int n, struct ParserData *parser_data);
+void check_add_prog_param(char *name, Type type, struct ParserData *parser_data);
+void check_add_fun_param(char *name, Type type, struct ParserData *parser_data);
+void check_add_var(char *name, Type type, struct ParserData *parser_data);
 
 Type get_type(char *name, SymbolTable *symbol_table);
 int get_num_params(char *name, SymbolTable *symbol_table);
