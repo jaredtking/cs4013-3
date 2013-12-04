@@ -10,7 +10,7 @@ void parse(ParserData *parser_data)
 	fprint_symbol_table(parser_data->symbols, parser_data->symbol_table);
 }
 
-void match(TokenType t, ParserData *parser_data)
+int match(TokenType t, ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NONE);
 
@@ -20,8 +20,12 @@ void match(TokenType t, ParserData *parser_data)
 		} else {
 			// NOP
 		}
-	} else
+
+		return 1;
+	} else {
 		synerr((TokenType[]){t}, 1, tok, parser_data);
+		return 0;
+	}
 }
 
 void parse_program(ParserData *parser_data)
@@ -30,12 +34,12 @@ void parse_program(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_PROGRAM:
-		match(TOKEN_PROGRAM, parser_data);
-		match(TOKEN_ID, parser_data);
-		match(TOKEN_LPAREN, parser_data);
+		if (match(TOKEN_PROGRAM, parser_data) == 0) synch(PRODUCTION_PROGRAM, tok, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_PROGRAM, tok, parser_data);
+		if (match(TOKEN_LPAREN, parser_data) == 0) synch(PRODUCTION_PROGRAM, tok, parser_data);
 		parse_id_list(parser_data);
-		match(TOKEN_RPAREN, parser_data);
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_RPAREN, parser_data) == 0) synch(PRODUCTION_PROGRAM, tok, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_PROGRAM, tok, parser_data);
 		parse_program_(parser_data);
 	break;
 	default:
@@ -57,11 +61,11 @@ void parse_program_(ParserData *parser_data)
 	case TOKEN_FUNCTION:
 		parse_subprogram_declarations(parser_data);
 		parse_compound_statement(parser_data);
-		match(TOKEN_PERIOD, parser_data);
+		if (match(TOKEN_PERIOD, parser_data) == 0) synch(PRODUCTION_PROGRAM_, tok, parser_data);
 	break;
 	case TOKEN_BEGIN:
 		parse_compound_statement(parser_data);
-		match(TOKEN_PERIOD, parser_data);
+		if (match(TOKEN_PERIOD, parser_data) == 0) synch(PRODUCTION_PROGRAM_, tok, parser_data);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_VAR,TOKEN_FUNCTION,TOKEN_BEGIN}, 3, tok, parser_data);
@@ -78,11 +82,11 @@ void parse_program__(ParserData *parser_data)
 	case TOKEN_FUNCTION:
 		parse_subprogram_declarations(parser_data);
 		parse_compound_statement(parser_data);
-		match(TOKEN_PERIOD, parser_data);
+		if (match(TOKEN_PERIOD, parser_data) == 0) synch(PRODUCTION_PROGRAM__, tok, parser_data);
 	break;
 	case TOKEN_BEGIN:
 		parse_compound_statement(parser_data);
-		match(TOKEN_PERIOD, parser_data);
+		if (match(TOKEN_PERIOD, parser_data) == 0) synch(PRODUCTION_PROGRAM__, tok, parser_data);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_FUNCTION,TOKEN_BEGIN}, 2, tok, parser_data);
@@ -97,7 +101,7 @@ void parse_id_list(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		match(TOKEN_ID, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_ID_LIST, tok, parser_data);
 		parse_id_list_(parser_data);
 	break;
 	default:
@@ -113,8 +117,8 @@ void parse_id_list_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_COMMA:
-		match(TOKEN_COMMA, parser_data);
-		match(TOKEN_ID, parser_data);
+		if (match(TOKEN_COMMA, parser_data) == 0) synch(PRODUCTION_ID_LIST_, tok, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_ID_LIST_, tok, parser_data);
 		parse_id_list_(parser_data);
 	break;
 	case TOKEN_RPAREN:
@@ -133,11 +137,11 @@ void parse_declarations(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_VAR:
-		match(TOKEN_VAR, parser_data);
-		match(TOKEN_ID, parser_data);
-		match(TOKEN_COLON, parser_data);
+		if (match(TOKEN_VAR, parser_data) == 0) synch(PRODUCTION_DECLARATIONS, tok, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_DECLARATIONS, tok, parser_data);
+		if (match(TOKEN_COLON, parser_data) == 0) synch(PRODUCTION_DECLARATIONS, tok, parser_data);
 		parse_type(parser_data);
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_DECLARATIONS, tok, parser_data);
 		parse_declarations_(parser_data);
 	break;
 	default:
@@ -153,11 +157,11 @@ void parse_declarations_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_VAR:
-		match(TOKEN_VAR, parser_data);
-		match(TOKEN_ID, parser_data);
-		match(TOKEN_COLON, parser_data);
+		if (match(TOKEN_VAR, parser_data) == 0) synch(PRODUCTION_DECLARATIONS_, tok, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_DECLARATIONS_, tok, parser_data);
+		if (match(TOKEN_COLON, parser_data) == 0) synch(PRODUCTION_DECLARATIONS_, tok, parser_data);
 		parse_type(parser_data);
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_DECLARATIONS_, tok, parser_data);
 		parse_declarations_(parser_data);
 	break;
 	case TOKEN_FUNCTION:
@@ -177,14 +181,14 @@ void parse_type(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_ARRAY:
-		match(TOKEN_ARRAY, parser_data);
-		match(TOKEN_LBRACKET, parser_data);
-		match(TOKEN_NUM, parser_data);
-		match(TOKEN_PERIOD, parser_data);
-		match(TOKEN_PERIOD, parser_data);
-		match(TOKEN_RBRACKET, parser_data);
-		match(TOKEN_NUM, parser_data);
-		match(TOKEN_OF, parser_data);
+		if (match(TOKEN_ARRAY, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
+		if (match(TOKEN_LBRACKET, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
+		if (match(TOKEN_NUM, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
+		if (match(TOKEN_PERIOD, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
+		if (match(TOKEN_PERIOD, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
+		if (match(TOKEN_RBRACKET, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
+		if (match(TOKEN_NUM, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
+		if (match(TOKEN_OF, parser_data) == 0) synch(PRODUCTION_TYPE, tok, parser_data);
 	case TOKEN_INTEGER:
 	case TOKEN_REAL:
 		parse_std_type(parser_data);
@@ -202,10 +206,10 @@ void parse_std_type(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_INTEGER:
-		match(TOKEN_INTEGER, parser_data);
+		if (match(TOKEN_INTEGER, parser_data) == 0) synch(PRODUCTION_STD_TYPE, tok, parser_data);
 	break;
 	case TOKEN_REAL:
-		match(TOKEN_REAL, parser_data);
+		if (match(TOKEN_REAL, parser_data) == 0) synch(PRODUCTION_STD_TYPE, tok, parser_data);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_INTEGER, TOKEN_REAL}, 2, tok, parser_data);
@@ -221,7 +225,7 @@ void parse_subprogram_declarations(ParserData *parser_data)
 	switch (tok->token->type) {
 	case TOKEN_FUNCTION:
 		parse_subprogram_declaration(parser_data);
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_DECLARATIONS, tok, parser_data);
 		parse_subprogram_declarations_(parser_data);
 	break;
 	default:
@@ -238,7 +242,7 @@ void parse_subprogram_declarations_(ParserData *parser_data)
 	switch (tok->token->type) {
 	case TOKEN_FUNCTION:
 		parse_subprogram_declaration(parser_data);
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_DECLARATIONS_, tok, parser_data);
 		parse_subprogram_declarations_(parser_data);
 	break;
 	case TOKEN_BEGIN:
@@ -315,8 +319,8 @@ void parse_subprogram_head(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_FUNCTION:
-		match(TOKEN_FUNCTION, parser_data);
-		match(TOKEN_ID, parser_data);
+		if (match(TOKEN_FUNCTION, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_HEAD, tok, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_HEAD, tok, parser_data);
 		parse_subprogram_head_(parser_data);
 	break;
 	default:
@@ -333,14 +337,14 @@ void parse_subprogram_head_(ParserData *parser_data)
 	switch (tok->token->type) {
 	case TOKEN_LPAREN:
 		parse_arguments(parser_data);
-		match(TOKEN_COLON, parser_data);
+		if (match(TOKEN_COLON, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_HEAD_, tok, parser_data);
 		parse_std_type(parser_data);
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_HEAD_, tok, parser_data);
 	break;
 	case TOKEN_COLON:
-		match(TOKEN_COLON, parser_data);
+		if (match(TOKEN_COLON, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_HEAD_, tok, parser_data);
 		parse_std_type(parser_data);
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_SUBPROGRAM_HEAD_, tok, parser_data);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_LPAREN,TOKEN_COLON}, 2, tok, parser_data);
@@ -355,9 +359,9 @@ void parse_arguments(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_LPAREN:
-		match(TOKEN_LPAREN, parser_data);
+		if (match(TOKEN_LPAREN, parser_data) == 0) synch(PRODUCTION_ARGUMENTS, tok, parser_data);
 		parse_param_list(parser_data);
-		match(TOKEN_RPAREN, parser_data);
+		if (match(TOKEN_RPAREN, parser_data) == 0) synch(PRODUCTION_ARGUMENTS, tok, parser_data);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_LPAREN}, 1, tok, parser_data);
@@ -372,8 +376,8 @@ void parse_param_list(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		match(TOKEN_ID, parser_data);
-		match(TOKEN_COLON, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_PARAM_LIST, tok, parser_data);
+		if (match(TOKEN_COLON, parser_data) == 0) synch(PRODUCTION_PARAM_LIST, tok, parser_data);
 		parse_type(parser_data);
 		parse_param_list_(parser_data);
 	break;
@@ -390,9 +394,9 @@ void parse_param_list_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_SEMICOLON:
-		match(TOKEN_SEMICOLON, parser_data);
-		match(TOKEN_ID, parser_data);
-		match(TOKEN_COLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_PARAM_LIST_, tok, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_PARAM_LIST_, tok, parser_data);
+		if (match(TOKEN_COLON, parser_data) == 0) synch(PRODUCTION_PARAM_LIST_, tok, parser_data);
 		parse_type(parser_data);
 		parse_param_list_(parser_data);
 	break;
@@ -412,7 +416,7 @@ void parse_compound_statement(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_BEGIN:
-		match(TOKEN_BEGIN, parser_data);
+		if (match(TOKEN_BEGIN, parser_data) == 0) synch(PRODUCTION_COMPOUND_STATEMENT, tok, parser_data);
 		parse_compound_statement_(parser_data);
 	break;
 	default:
@@ -433,7 +437,7 @@ void parse_compound_statement_(ParserData *parser_data)
 	case TOKEN_WHILE:
 		parse_optional_statements(parser_data);
 	case TOKEN_END:
-		match(TOKEN_END, parser_data);
+		if (match(TOKEN_END, parser_data) == 0) synch(PRODUCTION_COMPOUND_STATEMENT_, tok, parser_data);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID,TOKEN_BEGIN,TOKEN_IF,TOKEN_WHILE,TOKEN_END}, 5, tok, parser_data);
@@ -485,7 +489,7 @@ void parse_statement_list_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_SEMICOLON:
-		match(TOKEN_SEMICOLON, parser_data);
+		if (match(TOKEN_SEMICOLON, parser_data) == 0) synch(PRODUCTION_STATEMENT_LIST_, tok, parser_data);
 		parse_statement(parser_data);
 		parse_statement_list_(parser_data);
 	break;
@@ -506,23 +510,23 @@ void parse_statement(ParserData *parser_data)
 	switch (tok->token->type) {
 	case TOKEN_ID:
 		parse_var(parser_data);
-		match(TOKEN_ASSIGNOP, parser_data);
+		if (match(TOKEN_ASSIGNOP, parser_data) == 0) synch(PRODUCTION_STATEMENT, tok, parser_data);
 		parse_expr(parser_data);
 	break;
 	case TOKEN_BEGIN:
 		parse_compound_statement(parser_data);
 	break;
 	case TOKEN_IF:
-		match(TOKEN_IF, parser_data);
+		if (match(TOKEN_IF, parser_data) == 0) synch(PRODUCTION_STATEMENT, tok, parser_data);
 		parse_expr(parser_data);
-		match(TOKEN_THEN, parser_data);
+		if (match(TOKEN_THEN, parser_data) == 0) synch(PRODUCTION_STATEMENT, tok, parser_data);
 		parse_statement(parser_data);
 		parse_statement_(parser_data);
 	break;
 	case TOKEN_WHILE:
-		match(TOKEN_WHILE, parser_data);
+		if (match(TOKEN_WHILE, parser_data) == 0) synch(PRODUCTION_STATEMENT, tok, parser_data);
 		parse_expr(parser_data);
-		match(TOKEN_DO, parser_data);
+		if (match(TOKEN_DO, parser_data) == 0) synch(PRODUCTION_STATEMENT, tok, parser_data);
 		parse_statement(parser_data);
 	break;
 	default:
@@ -562,7 +566,7 @@ void parse_var(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		match(TOKEN_ID, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_VAR, tok, parser_data);
 		parse_var_(parser_data);
 	break;
 	default:
@@ -578,9 +582,9 @@ void parse_var_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_LBRACKET:
-		match(TOKEN_LBRACKET, parser_data);
+		if (match(TOKEN_LBRACKET, parser_data) == 0) synch(PRODUCTION_VAR_, tok, parser_data);
 		parse_expr(parser_data);
-		match(TOKEN_RBRACKET, parser_data);
+		if (match(TOKEN_RBRACKET, parser_data) == 0) synch(PRODUCTION_VAR_, tok, parser_data);
 	break;
 	case TOKEN_ASSIGNOP:
 		// NOP
@@ -618,7 +622,7 @@ void parse_expr_list_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_COMMA:
-		match(TOKEN_COMMA, parser_data);
+		if (match(TOKEN_COMMA, parser_data) == 0) synch(PRODUCTION_EXPR_LIST_, tok, parser_data);
 		parse_expr(parser_data);
 		parse_expr_list_(parser_data);
 	break;
@@ -658,7 +662,7 @@ void parse_expr_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_RELOP:
-		match(TOKEN_RELOP, parser_data);
+		if (match(TOKEN_RELOP, parser_data) == 0) synch(PRODUCTION_EXPR_, tok, parser_data);
 		parse_simple_expr(parser_data);
 	break;
 	case TOKEN_SEMICOLON:
@@ -704,7 +708,7 @@ void parse_simple_expr_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_ADDOP:
-		match(TOKEN_ADDOP, parser_data);
+		if (match(TOKEN_ADDOP, parser_data) == 0) synch(PRODUCTION_SIMPLE_EXPR_, tok, parser_data);
 		parse_term(parser_data);
 		parse_simple_expr_(parser_data);
 	break;
@@ -751,7 +755,7 @@ void parse_term_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_MULOP:
-		match(TOKEN_MULOP, parser_data);
+		if (match(TOKEN_MULOP, parser_data) == 0) synch(PRODUCTION_TERM_, tok, parser_data);
 		parse_factor(parser_data);
 		parse_term_(parser_data);
 	break;
@@ -780,19 +784,19 @@ void parse_factor(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		match(TOKEN_ID, parser_data);
+		if (match(TOKEN_ID, parser_data) == 0) synch(PRODUCTION_FACTOR, tok, parser_data);
 		parse_factor_(parser_data);
 	break;
 	case TOKEN_NUM:
-		match(TOKEN_NUM, parser_data);
+		if (match(TOKEN_NUM, parser_data) == 0) synch(PRODUCTION_FACTOR, tok, parser_data);
 	break;
 	case TOKEN_LPAREN:
-		match(TOKEN_LPAREN, parser_data);
+		if (match(TOKEN_LPAREN, parser_data) == 0) synch(PRODUCTION_FACTOR, tok, parser_data);
 		parse_expr(parser_data);
-		match(TOKEN_RPAREN, parser_data);
+		if (match(TOKEN_RPAREN, parser_data) == 0) synch(PRODUCTION_FACTOR, tok, parser_data);
 	break;
 	case TOKEN_NOT:
-		match(TOKEN_NOT, parser_data);
+		if (match(TOKEN_NOT, parser_data) == 0) synch(PRODUCTION_FACTOR, tok, parser_data);
 		parse_factor(parser_data);
 	break;
 	default:
@@ -808,14 +812,14 @@ void parse_factor_(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_LPAREN:
-		match(TOKEN_LPAREN, parser_data);
+		if (match(TOKEN_LPAREN, parser_data) == 0) synch(PRODUCTION_FACTOR_, tok, parser_data);
 		parse_expr_list(parser_data);
-		match(TOKEN_RPAREN, parser_data);
+		if (match(TOKEN_RPAREN, parser_data) == 0) synch(PRODUCTION_FACTOR_, tok, parser_data);
 	break;
 	case TOKEN_LBRACKET:
-		match(TOKEN_LBRACKET, parser_data);
+		if (match(TOKEN_LBRACKET, parser_data) == 0) synch(PRODUCTION_FACTOR_, tok, parser_data);
 		parse_expr(parser_data);
-		match(TOKEN_RBRACKET, parser_data);
+		if (match(TOKEN_RBRACKET, parser_data) == 0) synch(PRODUCTION_FACTOR_, tok, parser_data);
 	break;
 	case TOKEN_MULOP:
 	case TOKEN_ADDOP:
@@ -843,7 +847,7 @@ void parse_sign(ParserData *parser_data)
 
 	switch (tok->token->type) {
 	case TOKEN_ADDOP:
-		match(TOKEN_ADDOP, parser_data);
+		if (match(TOKEN_ADDOP, parser_data) == 0) synch(PRODUCTION_SIGN, tok, parser_data);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ADDOP}, 1, tok, parser_data);

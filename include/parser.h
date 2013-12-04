@@ -7,7 +7,7 @@
 #include "token.h"
 
 void parse(ParserData *parser_data);
-void match(TokenType t, ParserData *parser_data);
+int match(TokenType t, ParserData *parser_data);
 
 void parse_program(ParserData *parser_data);
 void parse_program_(ParserData *parser_data);
