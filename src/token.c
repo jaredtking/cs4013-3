@@ -253,15 +253,3 @@ char *attribute_to_str (int attr)
 	snprintf(str, 1, "%d", attr);
 	return str;
 }
-
-void lexerr(MachineResult *result, ParserData *parser_data)
-{
-	// output to console
-	fprintf (stderr, "%-8s%s on line %d: \"%s\"\n", "LEXERR", attribute_to_str(result->token->attribute), result->line_no, result->lexeme);
-
-	// listing file
-	if (parser_data->listing != NULL)
-		fprintf (parser_data->listing, "%-8s%-30s%s\n", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
-
-	parser_data->result |= PARSER_RESULT_LEXERR;
-}

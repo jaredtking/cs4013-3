@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "errors.h"
 
 typedef enum Type
 {
@@ -41,6 +42,8 @@ void check_add_var(char *name, Type type, struct ParserData *parser_data);
 Type get_type(char *name, SymbolTable *symbol_table);
 int get_num_params(char *name, SymbolTable *symbol_table);
 Type get_param_type(char *name, SymbolTable *symbol_table);
+
+Symbol *get_symbol(char *name, SymbolTable *symbol_table, int global_scope);
 
 void fprint_symbol_table(FILE *f, SymbolTable *symbol_table);
 

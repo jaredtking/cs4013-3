@@ -1,33 +1,54 @@
 #include "symbol_table.h"
 
-int get_sym_table_addr(char *word, SymbolTable *symbol_table, int loc)
+void check_enter_method(char *name, struct ParserData *parser_data)
+{
+
+}
+
+void check_exit_method(struct ParserData *parser_data)
+{
+
+}
+
+void set_method_type(Type type, struct ParserData *parser_data)
+{
+
+}
+
+void set_method_param_count(int n, struct ParserData *parser_data)
+{
+
+}
+
+void check_add_prog_param(char *name, Type type, struct ParserData *parser_data)
+{
+
+}
+
+void check_add_fun_param(char *name, Type type, struct ParserData *parser_data)
+{
+
+}
+
+void check_add_var(char *name, Type type, struct ParserData *parser_data)
+{
+
+}
+
+Symbol *get_symbol(char *name, SymbolTable *symbol_table, int global_scope)
 {
 	// empty table
 	if (symbol_table->symbol == NULL)
-	{
-		symbol_table->symbol = (char *)malloc(strlen(word)+1*sizeof(char));
-		strcpy(symbol_table->symbol, word);
-		return loc;
-	}
+		return NULL;
 	// symbol found
-	else if (strcmp(symbol_table->symbol, word) == 0) {
-		return loc;
-	}
+	else if (strcmp(symbol_table->symbol->name, name) == 0)
+		return symbol_table->symbol;
 	// end of non-empty table
 	else if (symbol_table->next == NULL)
-	{
-		SymbolTable *symbol = (SymbolTable *)malloc(sizeof(SymbolTable));
-		symbol->symbol = (char *)malloc(strlen(word)+1*sizeof(char));
-		strcpy(symbol->symbol, word);
-		symbol->next = NULL;
-
-		symbol_table->next = symbol;
-
-		return loc + 1;
-	}
+		return NULL;
 	// try next entry
 	else
-		return get_sym_table_addr(word, symbol_table->next, loc + 1);
+		return get_symbol(name, symbol_table->next, global_scope);
 }
 
 void fprint_symbol_table(FILE *f, SymbolTable *symbol_table)
@@ -40,7 +61,7 @@ void fprint_symbol_table(FILE *f, SymbolTable *symbol_table)
 	int i = 0;
 	while (s != NULL && s->symbol != NULL)
 	{
-		fprintf (f, "%-5d%s\n", i, s->symbol);
+		fprintf (f, "%-5d%s\n", i, s->symbol->name);
 
 		i++;
 		s = s->next;

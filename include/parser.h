@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include "token.h"
 #include "symbol_table.h"
+#include "errors.h"
 
 typedef enum Production
 {
@@ -53,6 +54,7 @@ typedef enum Production
 struct MachineResult;
 struct ReservedWord;
 enum TokenType;
+struct SymbolTable;
 
 typedef struct ParserData
 {
@@ -61,7 +63,7 @@ typedef struct ParserData
 	FILE *tokens;
 	FILE *symbols;
 	struct ReservedWord *reserved_words;
-	SymbolTable *symbol_table;
+	struct SymbolTable *symbol_table;
 	int result;
 } ParserData;
 
@@ -113,6 +115,5 @@ void parse_factor_(ParserData *parser_data);
 void parse_sign(ParserData *parser_data);
 
 void synch(Production prod, struct MachineResult *tok, ParserData *parser_data);
-void synerr(enum TokenType *expected, int len, struct MachineResult *found, ParserData *parser_data);
 
 #endif

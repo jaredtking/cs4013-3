@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "parser.h"
 #include "machine.h"
+#include "errors.h"
 
 typedef enum TokenType
 {
@@ -91,6 +92,5 @@ int token_type_to_int (TokenType type);
 TokenType int_to_token_type (int id);
 char *token_type_to_str (TokenType type);
 char *attribute_to_str (int attr);
-void lexerr(struct MachineResult *result, struct ParserData *parser_data);
 
 #endif

@@ -956,34 +956,3 @@ void synch(Production prod, MachineResult *tok, ParserData *parser_data)
 		tok = get_next_token(parser_data, TOKEN_OPTION_NONE);
 	}
 }
-
-void output_synerr(TokenType *expected, int len, MachineResult *found, FILE *out)
-{
-	fprintf (out, "%-8sExpecting ", "SYNERR" );
-	for (int i = 0; i < len; i++) {
-		fprintf (out, "\"%s\"", token_type_to_str(expected[i]));
-		if (i < len - 1) {
-			if (len > 2)
-				fprintf (out, ", ");
-			if (i == len - 2)
-				fprintf (out, " or ");
-		}
-	}
-	fprintf (out, " but received \"%s\"", token_type_to_str(found->token->type));
-
-	if (out == stderr)
-		fprintf (out, " on line %d", found->line_no);
-	
-	fprintf (out, "\n");
-}
-
-void synerr(TokenType *expected, int len, MachineResult *found, ParserData *parser_data)
-{
-	// output to console
-	output_synerr(expected, len, found, stderr);
-
-	// output to listing file
-	output_synerr(expected, len, found, parser_data->listing);
-
-	parser_data->result |= PARSER_RESULT_SYNERR;
-}
