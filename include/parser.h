@@ -65,6 +65,8 @@ typedef struct ParserData
 	struct ReservedWord *reserved_words;
 	struct SymbolTable *symbol_table;
 	int result;
+	struct SymbolTable *sym_eye;
+	int sym_turn;
 } ParserData;
 
 #define PARSER_RESULT_OK 0
