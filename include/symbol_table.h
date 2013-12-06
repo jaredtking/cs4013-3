@@ -43,15 +43,20 @@ typedef struct Attributes
 	Type t;
 	int c;
 	int in;
+	int a;
+	int s;
+	int e;
 } Attributes;
+
+#define ATTRIBUTES_DEFAULT (Attributes){NONE,0,0,0,0,0}
 
 struct ParserData;
 
 Symbol *check_enter_method(char *name, struct ParserData *parser_data);
 int check_exit_method(struct ParserData *parser_data);
 Symbol *check_add_prog_param(char *name, struct ParserData *parser_data);
-Symbol *check_add_fun_param(char *name, Type type, struct ParserData *parser_data);
-Symbol *check_add_var(char *name, Type type, struct ParserData *parser_data);
+Symbol *check_add_fun_param(char *name, Attributes attrs, struct ParserData *parser_data);
+Symbol *check_add_var(char *name, Attributes attrs, struct ParserData *parser_data);
 void set_method_type(Type type, struct ParserData *parser_data);
 void set_method_param_count(int count, struct ParserData *parser_data);
 

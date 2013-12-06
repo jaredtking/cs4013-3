@@ -41,11 +41,11 @@ START_TEST (test_check_add_var)
 
 	Symbol *result;
 
-	result = check_add_var("int", INT, parser_data);
+	result = check_add_var("int", (Attributes){INT,0,0,0,0,0}, parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("int", result->name);
 
-	result = check_add_var("real", REAL, parser_data);
+	result = check_add_var("real", (Attributes){REAL,0,0,0,0,0}, parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("real", result->name);
 
@@ -73,7 +73,7 @@ START_TEST (test_check_add_fun_param)
 
 	Symbol *result;
 
-	result = check_add_fun_param("fparam", INT, parser_data);
+	result = check_add_fun_param("fparam", (Attributes){INT,0,0,0,0,0}, parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("fparam", result->name);
 	ck_assert_int_eq(1, result->param);
@@ -95,7 +95,7 @@ START_TEST (test_get_symbol)
 	ck_assert(result->symbol->type == PGNAME);
 
 	// program.pvar
-	ck_assert(check_add_var("pvar", REAL, parser_data) != NULL);	
+	ck_assert(check_add_var("pvar", (Attributes){REAL,0,0,0,0,0}, parser_data) != NULL);	
 
 	// program.fun
 	ck_assert(check_enter_method("fun", parser_data) != NULL);
@@ -183,8 +183,8 @@ START_TEST (test_get_param_type)
 
 	ck_assert(check_enter_method("fun", parser_data) != NULL);
 
-	ck_assert(check_add_fun_param("x", INT, parser_data) != NULL);
-	ck_assert(check_add_fun_param("y", REAL, parser_data) != NULL);
+	ck_assert(check_add_fun_param("x", (Attributes){INT,0,0,0,0,0}, parser_data) != NULL);
+	ck_assert(check_add_fun_param("y", (Attributes){REAL,0,0,0,0,0}, parser_data) != NULL);
 
 	ck_assert(get_param_type("fun", 0, parser_data) == INT);
 	ck_assert(get_param_type("fun", 1, parser_data) == REAL);

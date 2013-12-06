@@ -1,6 +1,6 @@
 #include "symbol_table.h"
 
-SymbolTable *new_symbol_table_entry(char *name, Type type)
+SymbolTable *new_symbol_table_entry(char *name, Attributes attrs)
 {
 	SymbolTable *new = (SymbolTable *)malloc(sizeof(SymbolTable));
 	new->parent = NULL;
@@ -10,17 +10,16 @@ SymbolTable *new_symbol_table_entry(char *name, Type type)
 	new->temp = NULL;
 
 	new->symbol = (Symbol *)malloc(sizeof(Symbol));
+	new->symbol->type = attrs.t;
 	new->symbol->fun = 0;
 	new->symbol->param = 0;
-	new->symbol->count = 0;
-	new->symbol->array = 0;
-	new->symbol->start = 0;
-	new->symbol->end = 0;
+	new->symbol->count = attrs.c;
+	new->symbol->array = attrs.a;
+	new->symbol->start = attrs.s;
+	new->symbol->end = attrs.e;
 
 	new->symbol->name = (char *)malloc(sizeof(name));
 	strcpy(new->symbol->name, name);
-
-	new->symbol->type = type;
 
 	return new;
 }
@@ -34,9 +33,9 @@ Symbol *check_enter_method(char *name, struct ParserData *parser_data)
 
 	// type: program name if first, otherwise function name
 	if (parser_data->sym_eye == NULL)
-		new = new_symbol_table_entry(name, PGNAME);
+		new = new_symbol_table_entry(name, (Attributes){PGNAME,0,0,0,0,0});
 	else {
-		new = new_symbol_table_entry(name, NONE);
+		new = new_symbol_table_entry(name, (Attributes){NONE,0,0,0,0,0});
 		new->symbol->fun = 1;
 	}
 
@@ -89,19 +88,19 @@ int check_exit_method(struct ParserData *parser_data)
 
 Symbol *check_add_prog_param(char *name, struct ParserData *parser_data)
 {
-	return check_add_var(name, PGPARAM, parser_data);
+	return check_add_var(name, (Attributes){PGPARAM,0,0,0,0,0}, parser_data);
 }
 
-Symbol *check_add_fun_param(char *name, Type type, struct ParserData *parser_data)
+Symbol *check_add_fun_param(char *name, Attributes attrs, struct ParserData *parser_data)
 {
-	Symbol *symbol = check_add_var(name, type, parser_data);
+	Symbol *symbol = check_add_var(name, attrs, parser_data);
 
 	symbol->param = 1;
 
 	return symbol;
 }
 
-Symbol *check_add_var(char *name, Type type, struct ParserData *parser_data)
+Symbol *check_add_var(char *name, Attributes attrs, struct ParserData *parser_data)
 {
 	if (parser_data->sym_eye == NULL) {
 		semerr("Cannot add variable before entering procedure.", parser_data);
@@ -111,7 +110,7 @@ Symbol *check_add_var(char *name, Type type, struct ParserData *parser_data)
 	if (get_symbol(name, parser_data, 0) != NULL)
 		semerr("Duplicate variable names.", parser_data);
 
-	SymbolTable *new = new_symbol_table_entry(name, type);
+	SymbolTable *new = new_symbol_table_entry(name, attrs);
 
 	// perform a turn
 	if (parser_data->sym_turn) {

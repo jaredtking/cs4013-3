@@ -181,7 +181,7 @@ void parse_declarations(ParserData *parser_data)
 		if (idptr == NULL) { doSynch = 1; break; }
 		if (match(TOKEN_COLON, parser_data) == NULL) { doSynch = 1; break; }
 		Attributes t = parse_type(parser_data);
-		check_add_var(idptr->lexeme, t.t, parser_data);
+		check_add_var(idptr->lexeme, t, parser_data);
 		if (match(TOKEN_SEMICOLON, parser_data) == NULL) { doSynch = 1; break; }
 		parse_declarations_(parser_data);
 	break;
@@ -208,7 +208,7 @@ void parse_declarations_(ParserData *parser_data)
 		if (idptr == NULL) { doSynch = 1; break; }
 		if (match(TOKEN_COLON, parser_data) == NULL) { doSynch = 1; break; }
 		Attributes t = parse_type(parser_data);
-		check_add_var(idptr->lexeme, t.t, parser_data);
+		check_add_var(idptr->lexeme, t, parser_data);
 		if (match(TOKEN_SEMICOLON, parser_data) == NULL) { doSynch = 1; break; }
 		parse_declarations_(parser_data);
 	break;
@@ -229,12 +229,12 @@ void parse_declarations_(ParserData *parser_data)
 struct Attributes parse_type(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
-	Attributes t, st;
+	Attributes t = ATTRIBUTES_DEFAULT, st = ATTRIBUTES_DEFAULT;
 	int doSynch = 0;
 
 	switch (tok->token->type) {
 	case TOKEN_ARRAY:
-		if (match(TOKEN_ARRAY, parser_data) == NULL) { synch(PRODUCTION_TYPE, tok, parser_data); break; }
+		if (match(TOKEN_ARRAY, parser_data) == NULL) { doSynch = 1; break; }
 		if (match(TOKEN_LBRACKET, parser_data) == NULL) { doSynch = 1; break; }
 		MachineResult *num1 = match(TOKEN_NUM, parser_data);
 		if (num1 == NULL) { doSynch = 1; break; }
@@ -248,14 +248,16 @@ struct Attributes parse_type(ParserData *parser_data)
 
 		if (num1->token->attribute != ATTRIBUTE_INT || num2->token->attribute != ATTRIBUTE_INT) {
 			// TODO ERR*
+			t.t = ERR;
 		} else {
 			int num1val;
 			sscanf(num1->lexeme, "%d", &num1val);
 			int num2val;
 			sscanf(num2->lexeme, "%d", &num2val);
 
-			//attributes.t = ARR(num1.val, num2.val, st.t)
-			// TODO
+			st.a = 1;
+			st.s = num1val;
+			st.e = num2val;
 
 			if (num2val > num1val) {
 				// TODO ERR*
@@ -283,7 +285,7 @@ struct Attributes parse_type(ParserData *parser_data)
 struct Attributes parse_std_type(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
-	Attributes st;
+	Attributes st = ATTRIBUTES_DEFAULT;
 	int doSynch = 0;
 
 	switch (tok->token->type) {
@@ -416,7 +418,7 @@ void parse_subprogram_head(ParserData *parser_data)
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	MachineResult *idptr;
 	int doSynch = 0;
-	Attributes sh_;
+	Attributes sh_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_FUNCTION:
@@ -442,7 +444,7 @@ struct Attributes parse_subprogram_head_(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
-	Attributes sh_, a, st;
+	Attributes sh_ = ATTRIBUTES_DEFAULT, a = ATTRIBUTES_DEFAULT, st = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_LPAREN:
@@ -475,7 +477,7 @@ struct Attributes parse_subprogram_head_(ParserData *parser_data)
 struct Attributes parse_arguments(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
-	Attributes a, pl;
+	Attributes a = ATTRIBUTES_DEFAULT, pl = ATTRIBUTES_DEFAULT;
 	int doSynch = 0;
 
 	switch (tok->token->type) {
@@ -502,7 +504,7 @@ struct Attributes parse_param_list(ParserData *parser_data)
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	MachineResult *idptr;
 	int doSynch = 0;
-	Attributes pl, t, pl_;
+	Attributes pl = ATTRIBUTES_DEFAULT, t = ATTRIBUTES_DEFAULT, pl_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
@@ -510,7 +512,7 @@ struct Attributes parse_param_list(ParserData *parser_data)
 		if (idptr == NULL) { doSynch = 1; break; }
 		if (match(TOKEN_COLON, parser_data) == NULL) { doSynch = 1; break; }
 		t = parse_type(parser_data);
-		check_add_fun_param(idptr->lexeme, t.t, parser_data);
+		check_add_fun_param(idptr->lexeme, t, parser_data);
 		pl_.in = 1;
 		parse_param_list_(parser_data, &pl_);
 		pl.c = pl_.c;
@@ -532,7 +534,7 @@ void parse_param_list_(ParserData *parser_data, struct Attributes *pl_)
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	MachineResult *idptr;
 	int doSynch = 0;
-	Attributes t, pl1_;
+	Attributes t = ATTRIBUTES_DEFAULT, pl1_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_SEMICOLON:
@@ -541,7 +543,7 @@ void parse_param_list_(ParserData *parser_data, struct Attributes *pl_)
 		if (idptr == NULL) { doSynch = 1; break; }
 		if (match(TOKEN_COLON, parser_data) == NULL) { doSynch = 1; break; }
 		t = parse_type(parser_data);
-		check_add_fun_param(idptr->lexeme, t.t, parser_data);
+		check_add_fun_param(idptr->lexeme, t, parser_data);
 		pl1_.in = pl_->in + 1;
 		parse_param_list_(parser_data, &pl1_);
 		pl_->c = pl1_.c;
