@@ -11,15 +11,16 @@ typedef enum Type
 	NONE,
 	PGNAME,
 	PGPARAM,
-	FNAME,
 	INT,
-	REAL
+	REAL,
+	ERR
 } Type;
 
 typedef struct Symbol
 {
 	char *name;
 	Type type;
+	int fun;
 	int param;
 	int count;
 	int array;
@@ -36,6 +37,13 @@ typedef struct SymbolTable
 	struct SymbolTable *child;
 	struct SymbolTable *temp;
 } SymbolTable;
+
+typedef struct Attributes
+{
+	Type t;
+	int c;
+	int in;
+} Attributes;
 
 struct ParserData;
 

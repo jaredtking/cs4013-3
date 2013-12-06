@@ -10,6 +10,7 @@ SymbolTable *new_symbol_table_entry(char *name, Type type)
 	new->temp = NULL;
 
 	new->symbol = (Symbol *)malloc(sizeof(Symbol));
+	new->symbol->fun = 0;
 	new->symbol->param = 0;
 	new->symbol->count = 0;
 	new->symbol->array = 0;
@@ -34,8 +35,10 @@ Symbol *check_enter_method(char *name, struct ParserData *parser_data)
 	// type: program name if first, otherwise function name
 	if (parser_data->sym_eye == NULL)
 		new = new_symbol_table_entry(name, PGNAME);
-	else
-		new = new_symbol_table_entry(name, FNAME);
+	else {
+		new = new_symbol_table_entry(name, NONE);
+		new->symbol->fun = 1;
+	}
 
 	// new symbol table
 	if (parser_data->symbol_table == NULL) {
@@ -69,7 +72,7 @@ int check_exit_method(struct ParserData *parser_data)
 	// Problem: upon exit moves eye to the function's parent prematurely
 	//          instead of to the function itself
 	// Solution: perform a NOP for 1 exit cycle to avoid skipping over function
-	if (parser_data->sym_eye->symbol->type == FNAME) {
+	if (parser_data->sym_eye->symbol->fun == 1) {
 		// now we can move on with our lives..
 		if (parser_data->sym_eye->temp != NULL)
 			parser_data->sym_eye = parser_data->sym_eye->temp;
@@ -129,13 +132,19 @@ Symbol *check_add_var(char *name, Type type, struct ParserData *parser_data)
 
 void set_method_type(Type type, struct ParserData *parser_data)
 {
-	if (parser_data->sym_eye->parent != NULL)
+	// handle case where eye is looking at function
+	if (parser_data->sym_eye->symbol->fun == 1)
+		parser_data->sym_eye->symbol->type = type;
+	else if (parser_data->sym_eye->parent != NULL)
 		parser_data->sym_eye->parent->symbol->type = type;
 }
 
 void set_method_param_count(int count, struct ParserData *parser_data)
 {
-	if (parser_data->sym_eye->parent != NULL)
+	// handle case where eye is looking at function
+	if (parser_data->sym_eye->symbol->fun == 1)
+		parser_data->sym_eye->symbol->count = count;
+	else if (parser_data->sym_eye->parent != NULL)
 		parser_data->sym_eye->parent->symbol->count = count;
 }
 
@@ -156,7 +165,7 @@ SymbolTable *get_symbol(char *name, struct ParserData *parser_data, int global_s
 	if (global_scope == 0) {
 		// Avoid jumping up to a new scope when doing a local search
 		// on a function after a turn with no children
-		if (curr->symbol->type == FNAME && curr->child == NULL)
+		if (curr->symbol->fun == 1 && curr->child == NULL)
 			stop_condition = curr;
 		else
 			stop_condition = curr->parent;
@@ -189,7 +198,6 @@ SymbolTable *get_symbol(char *name, struct ParserData *parser_data, int global_s
 
 Type get_type(char *name, struct ParserData *parser_data)
 {
-
 	SymbolTable *symbol_entry = get_symbol(name, parser_data, 1);
 
 	if (symbol_entry != NULL)
@@ -213,37 +221,78 @@ Type get_param_type(char *name, int n, struct ParserData *parser_data)
 	SymbolTable *symbol_entry = get_symbol(name, parser_data, 1);
 
 	if (symbol_entry != NULL) {
-		// find the Nth child after function declaration
 		SymbolTable *curr = symbol_entry->child;
+
+		// find the Nth child after function declaration (zero-indexed)
+		// the assumption is made that parameters come immediately after method
 		int i = 0;
-		while (i < n && curr != NULL)
+		while (i++ < n && curr != NULL)
 			curr = curr->next;
 
-		if (curr != NULL)
+		if (curr != NULL && curr->symbol->param == 1)
 			return curr->symbol->type;
 	}
 
 	return NONE;
 }
 
-void fprint_symbol_table(FILE *f, SymbolTable *symbol_table)
+char *symbol_attribute_str(Symbol *symbol)
 {
-	// symbol table file header
-	fprintf (f, "%-5s%s\n", "Loc.", "ID");
+	if (symbol->type == PGNAME)
+		return "";
 
-	// write ids to symbol table
+	char *type_str;
+
+	switch (symbol->type)
+	{
+	case PGPARAM: type_str = "param"; break;
+	case INT: type_str = "int"; break;
+	case REAL: type_str = "real"; break;
+	case ERR: type_str = "err"; break;
+	default: type_str = ""; break;
+	}
+
+	char *type_str2 = type_str;
+
+	if (symbol->array == 1) {
+		type_str2 = (char *)malloc(100);
+		sprintf(type_str2, "%s array [%d..%d]", type_str, symbol->start, symbol->end);
+	}
+
+	if (symbol->fun == 1) {
+		type_str2 = (char *)malloc(100);
+		sprintf(type_str2, "%s, fun, %d arg(s)", type_str, symbol->count);
+	}
+
+	char *param_str = (symbol->param == 1) ? ", fun param" : "";
+
+	char *str = (char *)malloc(100);
+	sprintf(str, "(%s%s)", type_str2, param_str);
+	return str;
+}
+
+void output_symbol_table(FILE *f, SymbolTable *symbol_table, int level)
+{
 	SymbolTable *s = symbol_table;
-	int i = 0;
-	//int level = 0;
+
 	while (s != NULL && s->symbol != NULL)
 	{
-		fprintf (f, "%-5d%s\n", i, s->symbol->name);
+		// indent
+		for (int l = 0; l < level; l++) fprintf (f, "  ");
 
-		i++;
-		// TODO
+		fprintf (f, "%s %s\n", s->symbol->name, symbol_attribute_str(s->symbol));
+
 		// recurse children
+		output_symbol_table(f, s->child, level + 1);
+
 		s = s->next;
 	}
 }
 
-// NOTE get_type should return return type if type = FNAME
+void fprint_symbol_table(FILE *f, SymbolTable *symbol_table)
+{
+	// symbol table file header
+	//fprintf (f, "%-5s%s\n", "Loc.", "ID");
+
+	output_symbol_table(f, symbol_table, 0);
+}

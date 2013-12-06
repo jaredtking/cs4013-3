@@ -109,9 +109,7 @@ int main(int argc, char **argv)
 	}
 
 	// initalize symbol table
-	parser_data->symbol_table = (SymbolTable *)malloc(sizeof(SymbolTable));
-	parser_data->symbol_table->symbol = NULL;
-	parser_data->symbol_table->next = NULL;
+	parser_data->symbol_table = NULL;
 	parser_data->sym_eye = NULL;
 
 	fprintf(stdout, "Parsing source file..\n");

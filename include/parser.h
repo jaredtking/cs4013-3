@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "token.h"
 #include "symbol_table.h"
+#include "token.h"
 #include "errors.h"
 
 typedef enum Production
@@ -55,6 +55,7 @@ struct MachineResult;
 struct ReservedWord;
 enum TokenType;
 struct SymbolTable;
+struct Attributes;
 
 typedef struct ParserData
 {
@@ -74,7 +75,7 @@ typedef struct ParserData
 #define PARSER_RESULT_SYNERR 2
 
 void parse(ParserData *parser_data);
-int match(enum TokenType t, ParserData *parser_data);
+struct MachineResult *match(enum TokenType t, ParserData *parser_data);
 
 void parse_program(ParserData *parser_data);
 void parse_program_(ParserData *parser_data);
@@ -83,18 +84,18 @@ void parse_id_list(ParserData *parser_data);
 void parse_id_list_(ParserData *parser_data);
 void parse_declarations(ParserData *parser_data);
 void parse_declarations_(ParserData *parser_data);
-void parse_type(ParserData *parser_data);
-void parse_std_type(ParserData *parser_data);
+struct Attributes parse_type(ParserData *parser_data);
+struct Attributes parse_std_type(ParserData *parser_data);
 void parse_subprogram_declarations(ParserData *parser_data);
 void parse_subprogram_declarations_(ParserData *parser_data);
 void parse_subprogram_declaration(ParserData *parser_data);
 void parse_subprogram_declaration_(ParserData *parser_data);
 void parse_subprogram_declaration__(ParserData *parser_data);
 void parse_subprogram_head(ParserData *parser_data);
-void parse_subprogram_head_(ParserData *parser_data);
-void parse_arguments(ParserData *parser_data);
-void parse_param_list(ParserData *parser_data);
-void parse_param_list_(ParserData *parser_data);
+struct Attributes parse_subprogram_head_(ParserData *parser_data);
+struct Attributes parse_arguments(ParserData *parser_data);
+struct Attributes parse_param_list(ParserData *parser_data);
+void parse_param_list_(ParserData *parser_data, struct Attributes *pl_);
 void parse_compound_statement(ParserData *parser_data);
 void parse_compound_statement_(ParserData *parser_data);
 void parse_optional_statements(ParserData *parser_data);
