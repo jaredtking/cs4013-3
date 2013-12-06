@@ -13,6 +13,7 @@ typedef enum Type
 	PGPARAM,
 	INT,
 	REAL,
+	BOOL,
 	ERR
 } Type;
 
@@ -43,12 +44,13 @@ typedef struct Attributes
 	Type t;
 	int c;
 	int in;
+	Type in_t;
 	int a;
 	int s;
 	int e;
 } Attributes;
 
-#define ATTRIBUTES_DEFAULT (Attributes){NONE,0,0,0,0,0}
+#define ATTRIBUTES_DEFAULT (Attributes){NONE,0,0,NONE,0,0,0}
 
 struct ParserData;
 

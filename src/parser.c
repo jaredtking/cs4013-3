@@ -667,30 +667,46 @@ void parse_statement_list_(ParserData *parser_data)
 		synch(PRODUCTION_STATEMENT_LIST_, tok, parser_data);
 }
 
-void parse_statement(ParserData *parser_data)
+struct Attributes parse_statement(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
+	Attributes s = ATTRIBUTES_DEFAULT, v = ATTRIBUTES_DEFAULT, e = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		parse_var(parser_data);
+		v = parse_var(parser_data);
 		if (match(TOKEN_ASSIGNOP, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr(parser_data);
+		e = parse_expr(parser_data);
+
+		if (v.t == e.t && (v.t == INT || v.t == REAL))
+			s.t = v.t;
+		else {
+			// TODO ERR*
+			s.t = ERR;
+		}
 	break;
 	case TOKEN_BEGIN:
 		parse_compound_statement(parser_data);
 	break;
 	case TOKEN_IF:
 		if (match(TOKEN_IF, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr(parser_data);
+		e = parse_expr(parser_data);
+		if (e.t != BOOL) {
+			// TODO ERR*
+			s.t = ERR;
+		}
 		if (match(TOKEN_THEN, parser_data) == NULL) { doSynch = 1; break; }
 		parse_statement(parser_data);
 		parse_statement_(parser_data);
 	break;
 	case TOKEN_WHILE:
 		if (match(TOKEN_WHILE, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr(parser_data);
+		e = parse_expr(parser_data);
+		if (e.t != BOOL) {
+			// TODO ERR*
+			s.t = ERR;
+		}
 		if (match(TOKEN_DO, parser_data) == NULL) { doSynch = 1; break; }
 		parse_statement(parser_data);
 	break;
@@ -702,6 +718,8 @@ void parse_statement(ParserData *parser_data)
 
 	if (doSynch == 1)
 		synch(PRODUCTION_STATEMENT, tok, parser_data);
+
+	return s;
 }
 
 void parse_statement_(ParserData *parser_data)
@@ -728,15 +746,27 @@ void parse_statement_(ParserData *parser_data)
 	}
 }
 
-void parse_var(ParserData *parser_data)
+struct Attributes parse_var(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
+	MachineResult *idptr;
 	int doSynch = 0;
+	Attributes v = ATTRIBUTES_DEFAULT, v_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		if (match(TOKEN_ID, parser_data) == NULL) { doSynch = 1; break; }
-		parse_var_(parser_data);
+	    idptr = match(TOKEN_ID, parser_data);
+		if (idptr == NULL) { doSynch = 1; break; }
+		SymbolTable *entry = get_symbol(idptr->lexeme, parser_data, 1);
+		if (entry->symbol->type == NONE) {
+			// TODO ERR*
+			v_.in_t = ERR;
+		} else {
+			v_.in = entry->symbol->array;
+			v_.in_t = entry->symbol->type;
+		}
+		parse_var_(parser_data, &v_);
+		v.t = v_.t;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID}, 1, tok, parser_data);
@@ -746,21 +776,37 @@ void parse_var(ParserData *parser_data)
 
 	if (doSynch == 1)
 		synch(PRODUCTION_VAR, tok, parser_data);
+
+	return v;
 }
 
-void parse_var_(ParserData *parser_data)
+void parse_var_(ParserData *parser_data, struct Attributes *v_)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
+	Attributes e = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_LBRACKET:
 		if (match(TOKEN_LBRACKET, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr(parser_data);
+		e = parse_expr(parser_data);
+		if (v_->in == 1) { // array?
+			if (e.t == INT) {
+				v_->t = v_->in_t;
+			} else {
+				// TODO ERR*
+				v_->t = ERR;
+			}
+		}
+		else {
+			// TODO ERR*
+			v_->t = ERR;
+		}
 		if (match(TOKEN_RBRACKET, parser_data) == NULL) { doSynch = 1; break; }
 	break;
 	case TOKEN_ASSIGNOP:
 		// NOP
+		v_->t = v_->in;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_LBRACKET,TOKEN_ASSIGNOP}, 2, tok, parser_data);
@@ -772,9 +818,10 @@ void parse_var_(ParserData *parser_data)
 		synch(PRODUCTION_VAR_, tok, parser_data);
 }
 
-void parse_expr_list(ParserData *parser_data)
+struct Attributes parse_expr_list(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
+	Attributes el = ATTRIBUTES_DEFAULT, e = ATTRIBUTES_DEFAULT, el_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
@@ -782,26 +829,49 @@ void parse_expr_list(ParserData *parser_data)
 	case TOKEN_LPAREN:
 	case TOKEN_NOT:
 	case TOKEN_ADDOP:
-		parse_expr(parser_data);
-		parse_expr_list_(parser_data);
+		e = parse_expr(parser_data);
+		char *idptr = "TODO";
+		if (get_num_params(idptr, parser_data) < 1) {
+			// TODO ERR* number of parameters do not match
+			el_.in_t = ERR;
+		} else if (get_param_type(idptr, 1, parser_data) != e.t) {
+	    	// TODO ERR* parameter type mismatch
+			el_.in_t = ERR;
+	    } else
+	       el_.in = 1;
+		parse_expr_list_(parser_data, &el_);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID,TOKEN_NUM,TOKEN_LPAREN,TOKEN_NOT,TOKEN_ADDOP}, 5, tok, parser_data);
 		synch(PRODUCTION_EXPR_LIST, tok, parser_data);
 	break;
 	}
+
+	return el;
 }
 
-void parse_expr_list_(ParserData *parser_data)
+void parse_expr_list_(ParserData *parser_data, struct Attributes *el_)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
+	Attributes el1_ = ATTRIBUTES_DEFAULT, e = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_COMMA:
 		if (match(TOKEN_COMMA, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr(parser_data);
-		parse_expr_list_(parser_data);
+		e = parse_expr(parser_data);
+		char *idptr = "TODO";
+		if (el_->in_t == ERR)
+			el1_.in_t = ERR;
+		else if (get_num_params(idptr, parser_data) < el_->in + 1) {
+			// TODO ERR* number of parameters do not match
+			el1_.in_t = ERR;
+		} else if (get_param_type(idptr, el_->in, parser_data) != e.t) {
+			// TODO ERR* parameter type mismatch
+			el1_.in_t = ERR;
+		} else
+			el1_.in = el_->in + 1;
+		parse_expr_list_(parser_data, &el1_);
 	break;
 	case TOKEN_RPAREN:
 		// NOP
@@ -816,9 +886,10 @@ void parse_expr_list_(ParserData *parser_data)
 		synch(PRODUCTION_EXPR_LIST_, tok, parser_data);
 }
 
-void parse_expr(ParserData *parser_data)
+struct Attributes parse_expr(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
+	Attributes e = ATTRIBUTES_DEFAULT, se = ATTRIBUTES_DEFAULT, e_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
@@ -826,25 +897,41 @@ void parse_expr(ParserData *parser_data)
 	case TOKEN_LPAREN:
 	case TOKEN_NOT:
 	case TOKEN_ADDOP:
-		parse_simple_expr(parser_data);
-		parse_expr_(parser_data);
+		se = parse_simple_expr(parser_data);
+		e_.in_t = se.t;
+		parse_expr_(parser_data, &e_);
+		e.t = e_.t;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID,TOKEN_NUM,TOKEN_LPAREN,TOKEN_NOT,TOKEN_ADDOP}, 5, tok, parser_data);
 		synch(PRODUCTION_EXPR, tok, parser_data);
 	break;
 	}
+
+	return e;
 }
 
-void parse_expr_(ParserData *parser_data)
+void parse_expr_(ParserData *parser_data, Attributes *e_)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
+	Attributes se = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_RELOP:
 		if (match(TOKEN_RELOP, parser_data) == NULL) { doSynch = 1; break; }
-		parse_simple_expr(parser_data);
+		se = parse_simple_expr(parser_data);
+		if (e_->in_t == ERR || se.t == ERR)
+			e_->t = ERR;
+		else if (e_->in_t != se.t) {
+			// TODO ERR* mixed mode not allowed
+			e_->t = ERR;
+		} else if (e_->in_t == INT || e_->in_t == REAL)
+			e_->t = BOOL;
+		else {
+			// TODO ERR* operands must be INT or REAL
+			e_->t = ERR;
+		}
 	break;
 	case TOKEN_SEMICOLON:
 	case TOKEN_END:
@@ -855,6 +942,7 @@ void parse_expr_(ParserData *parser_data)
 	case TOKEN_COMMA:
 	case TOKEN_RPAREN:
 		// NOP
+		e_->t = e_->in;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_RELOP,TOKEN_SEMICOLON,TOKEN_END,TOKEN_ELSE,TOKEN_THEN,TOKEN_DO,TOKEN_RBRACKET,TOKEN_COMMA,TOKEN_RPAREN}, 9, tok, parser_data);
@@ -866,36 +954,73 @@ void parse_expr_(ParserData *parser_data)
 		synch(PRODUCTION_EXPR_, tok, parser_data);
 }
 
-void parse_simple_expr(ParserData *parser_data)
+struct Attributes parse_simple_expr(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
+	Attributes se = ATTRIBUTES_DEFAULT, t = ATTRIBUTES_DEFAULT, se_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
 	case TOKEN_NUM:
 	case TOKEN_LPAREN:
 	case TOKEN_NOT:
+		t = parse_term(parser_data);
+		if (t.t == INT || t.t == REAL || t.t == ERR)
+			se_.in_t = t.t;
+		else {
+			// TODO ERR* only int and real can follow sign
+			se_.in_t = ERR;
+		}
+		parse_simple_expr_(parser_data, &se_);
+		se.t = se_.t;
+	break;
 	case TOKEN_ADDOP:
-		parse_term(parser_data);
-		parse_simple_expr_(parser_data);
+		parse_sign(parser_data);
+		t = parse_term(parser_data);
+		se.in_t = t.t;
+		parse_simple_expr_(parser_data, &se_);
+		se.t = se_.t;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID,TOKEN_NUM,TOKEN_LPAREN,TOKEN_NOT,TOKEN_ADDOP}, 5, tok, parser_data);
 		synch(PRODUCTION_SIMPLE_EXPR, tok, parser_data);
 	break;
 	}
+
+	return se;
 }
 
-void parse_simple_expr_(ParserData *parser_data)
+void parse_simple_expr_(ParserData *parser_data, struct Attributes *se_)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
+	Attributes t = ATTRIBUTES_DEFAULT, se1_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ADDOP:
 		if (match(TOKEN_ADDOP, parser_data) == NULL) { doSynch = 1; break; }
-		parse_term(parser_data);
-		parse_simple_expr_(parser_data);
+		t = parse_term(parser_data);
+		if (se_->in_t == ERR || t.t == ERR)
+			se1_.in_t = ERR;
+		else if (se_->in_t != t.t) {
+			// TODO ERR* mixed mode not allowed
+			se1_.in_t = ERR;
+		} else if (tok->token->attribute == '+' || tok->token->attribute == '-') {
+			if (se_->in_t == INT || se_->in_t == REAL)
+				se1_.in_t = se_->in_t;
+			else {
+				// TODO ERR* must be int or real
+				se1_.in_t = ERR;
+			}
+		} else if (tok->token->attribute == ATTRIBUTE_OR) {
+			if (se_->in_t == BOOL)
+				se1_.in_t = se_->in_t;
+			else {
+				// TODO ERR* must be bool
+			}
+		}
+		parse_simple_expr_(parser_data, &se1_);
+		se_->t = se1_.t;
 	break;
 	case TOKEN_RELOP:
 	case TOKEN_SEMICOLON:
@@ -907,6 +1032,7 @@ void parse_simple_expr_(ParserData *parser_data)
 	case TOKEN_COMMA:
 	case TOKEN_RPAREN:
 		// NOP
+		se_->t = se_->in_t;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_RELOP,TOKEN_SEMICOLON,TOKEN_END,TOKEN_ELSE,TOKEN_THEN,TOKEN_DO,TOKEN_RBRACKET,TOKEN_COMMA,TOKEN_RPAREN}, 10, tok, parser_data);
@@ -918,35 +1044,63 @@ void parse_simple_expr_(ParserData *parser_data)
 		synch(PRODUCTION_SIMPLE_EXPR_, tok, parser_data);
 }
 
-void parse_term(ParserData *parser_data)
+struct Attributes parse_term(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
+	Attributes t = ATTRIBUTES_DEFAULT, f = ATTRIBUTES_DEFAULT, t_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
 	case TOKEN_NUM:
 	case TOKEN_LPAREN:
 	case TOKEN_NOT:
-		parse_factor(parser_data);
-		parse_term_(parser_data);
+		f = parse_factor(parser_data);
+		t_.in_t = f.t;
+		parse_term_(parser_data, &t_);
+		t.t = t_.t;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID,TOKEN_NUM,TOKEN_LPAREN,TOKEN_NOT}, 4, tok, parser_data);
 		synch(PRODUCTION_TERM, tok, parser_data);
 	break;
 	}
+
+	return t;
 }
 
-void parse_term_(ParserData *parser_data)
+void parse_term_(ParserData *parser_data, struct Attributes *t_)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
+	Attributes f = ATTRIBUTES_DEFAULT, t1_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_MULOP:
 		if (match(TOKEN_MULOP, parser_data) == NULL) { doSynch = 1; break; }
-		parse_factor(parser_data);
-		parse_term_(parser_data);
+		f = parse_factor(parser_data);
+		if (t_->in_t == ERR || f.t == ERR)
+			t1_.in_t = ERR;
+		else if (t_->in_t != f.t) {
+			// TODO ERR* mixed mode not allowed
+			t1_.in_t = ERR;
+		} else if (tok->token->attribute == '*' || tok->token->attribute == '/' ||
+				   tok->token->attribute == ATTRIBUTE_DIV || tok->token->attribute == ATTRIBUTE_MOD) {
+			if (t_->in_t == INT)
+				t1_.in_t = INT;
+			else {
+				// TODO ERR* operands must be int
+				t1_.in_t = ERR;
+			}
+		} else if (tok->token->attribute == ATTRIBUTE_AND) {
+			if (t_->in_t == BOOL)
+				t1_.in_t = BOOL;
+			else {
+				// TODO ERR* operands must be bool
+				t1_.in_t = ERR;
+			}
+		}
+		parse_term_(parser_data, &t1_);
+		t_->t = t1_.t;
 	break;
 	case TOKEN_ADDOP:
 	case TOKEN_RELOP:
@@ -959,6 +1113,7 @@ void parse_term_(ParserData *parser_data)
 	case TOKEN_COMMA:
 	case TOKEN_RPAREN:
 		// NOP
+		t_->t = t_->in_t;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_MULOP,TOKEN_ADDOP,TOKEN_RELOP,TOKEN_SEMICOLON,TOKEN_END,TOKEN_ELSE,TOKEN_THEN,TOKEN_DO,TOKEN_RBRACKET,TOKEN_COMMA,TOKEN_RPAREN}, 11, tok, parser_data);
@@ -970,27 +1125,48 @@ void parse_term_(ParserData *parser_data)
 		synch(PRODUCTION_TERM_, tok, parser_data);
 }
 
-void parse_factor(ParserData *parser_data)
+struct Attributes parse_factor(ParserData *parser_data)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
+	MachineResult *idptr;
 	int doSynch = 0;
+	Attributes f = ATTRIBUTES_DEFAULT, e = ATTRIBUTES_DEFAULT, f1 = ATTRIBUTES_DEFAULT, f_ = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		if (match(TOKEN_ID, parser_data) == NULL) { doSynch = 1; break; }
-		parse_factor_(parser_data);
+		idptr = match(TOKEN_ID, parser_data);
+		if (idptr == NULL) { doSynch = 1; break; }
+		Type idtype = get_type(idptr->lexeme, parser_data);
+		if (idtype == NONE) {
+			// TODO ERR* undefined symbol
+			f_.in_t = ERR;
+		} else
+			f_.in_t = idtype;
+		parse_factor_(parser_data, &f_);
+		f.t = f_.t;
 	break;
 	case TOKEN_NUM:
 		if (match(TOKEN_NUM, parser_data) == NULL) { doSynch = 1; break; }
+		if (tok->token->attribute == ATTRIBUTE_INT)
+			f.t = INT;
+		else if (tok->token->attribute == ATTRIBUTE_REAL || tok->token->attribute == ATTRIBUTE_LONGREAL)
+			f.t = REAL;
 	break;
 	case TOKEN_LPAREN:
 		if (match(TOKEN_LPAREN, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr(parser_data);
+		e = parse_expr(parser_data);
 		if (match(TOKEN_RPAREN, parser_data) == NULL) { doSynch = 1; break; }
+		f.t = e.t;
 	break;
 	case TOKEN_NOT:
 		if (match(TOKEN_NOT, parser_data) == NULL) { doSynch = 1; break; }
-		parse_factor(parser_data);
+		f1 = parse_factor(parser_data);
+		if (f1.t == BOOL || f1.t == ERR)
+			f.t = f1.t;
+		else {
+			// TODO ERR* must be bool type
+			f.t = ERR;
+		}
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID,TOKEN_NUM,TOKEN_LPAREN,TOKEN_NOT}, 4, tok, parser_data);
@@ -1000,23 +1176,42 @@ void parse_factor(ParserData *parser_data)
 
 	if (doSynch == 1)
 		synch(PRODUCTION_FACTOR, tok, parser_data);
+
+	return f;
 }
 
-void parse_factor_(ParserData *parser_data)
+void parse_factor_(ParserData *parser_data, struct Attributes *f_)
 {
 	MachineResult *tok = get_next_token(parser_data, TOKEN_OPTION_NOP);
 	int doSynch = 0;
+	Attributes el = ATTRIBUTES_DEFAULT, e = ATTRIBUTES_DEFAULT;
 
 	switch (tok->token->type) {
 	case TOKEN_LPAREN:
 		if (match(TOKEN_LPAREN, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr_list(parser_data);
+		el = parse_expr_list(parser_data);
 		if (match(TOKEN_RPAREN, parser_data) == NULL) { doSynch = 1; break; }
+		if (el.t == ERR)
+			f_->t = ERR;
+		else
+			f_->t = f_->in_t;
 	break;
 	case TOKEN_LBRACKET:
 		if (match(TOKEN_LBRACKET, parser_data) == NULL) { doSynch = 1; break; }
-		parse_expr(parser_data);
+		e = parse_expr(parser_data);
 		if (match(TOKEN_RBRACKET, parser_data) == NULL) { doSynch = 1; break; }
+		if (f_->in_t == ERR || e.t == ERR)
+			f_->t = ERR;
+		else if (e.t != INT) {
+			// TODO ERR* index must be an integer
+			f_->t = ERR;
+		} else if (1 == 0) { // TODO ARRAY
+			f_->t = f_->in_t;
+			f_->a = 1;
+		} else {
+			// TODO ERR* symbol is not an array
+			f_->t = ERR;
+		}
 	break;
 	case TOKEN_MULOP:
 	case TOKEN_ADDOP:
@@ -1030,6 +1225,7 @@ void parse_factor_(ParserData *parser_data)
 	case TOKEN_COMMA:
 	case TOKEN_RPAREN:
 		// NOP
+		f_->t = f_->in_t;
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_LPAREN,TOKEN_LBRACKET,TOKEN_MULOP,TOKEN_ADDOP,TOKEN_RELOP,TOKEN_SEMICOLON,TOKEN_END,TOKEN_ELSE,TOKEN_THEN,TOKEN_DO,TOKEN_RBRACKET,TOKEN_COMMA,TOKEN_RPAREN}, 13, tok, parser_data);

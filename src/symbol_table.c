@@ -27,15 +27,15 @@ SymbolTable *new_symbol_table_entry(char *name, Attributes attrs)
 Symbol *check_enter_method(char *name, struct ParserData *parser_data)
 {
 	if (get_symbol(name, parser_data, 1) != NULL)
-		semerr("Duplicate method names.", parser_data);
+		semerr("Duplicate method names.", 0, parser_data);
 
 	SymbolTable *new;
 
 	// type: program name if first, otherwise function name
 	if (parser_data->sym_eye == NULL)
-		new = new_symbol_table_entry(name, (Attributes){PGNAME,0,0,0,0,0});
+		new = new_symbol_table_entry(name, (Attributes){PGNAME,0,0,NONE,0,0,0});
 	else {
-		new = new_symbol_table_entry(name, (Attributes){NONE,0,0,0,0,0});
+		new = new_symbol_table_entry(name, (Attributes){NONE,0,0,NONE,0,0,0});
 		new->symbol->fun = 1;
 	}
 
@@ -63,7 +63,7 @@ Symbol *check_enter_method(char *name, struct ParserData *parser_data)
 int check_exit_method(struct ParserData *parser_data)
 {
 	if (parser_data->sym_eye == NULL) {
-		semerr("Cannot exit method before entering.", parser_data);
+		semerr("Cannot exit method before entering.", 0, parser_data);
 		return 1;
 	}
 
@@ -88,7 +88,7 @@ int check_exit_method(struct ParserData *parser_data)
 
 Symbol *check_add_prog_param(char *name, struct ParserData *parser_data)
 {
-	return check_add_var(name, (Attributes){PGPARAM,0,0,0,0,0}, parser_data);
+	return check_add_var(name, (Attributes){PGPARAM,0,0,NONE,0,0,0}, parser_data);
 }
 
 Symbol *check_add_fun_param(char *name, Attributes attrs, struct ParserData *parser_data)
@@ -103,12 +103,12 @@ Symbol *check_add_fun_param(char *name, Attributes attrs, struct ParserData *par
 Symbol *check_add_var(char *name, Attributes attrs, struct ParserData *parser_data)
 {
 	if (parser_data->sym_eye == NULL) {
-		semerr("Cannot add variable before entering procedure.", parser_data);
+		semerr("Cannot add variable before entering procedure.", 0, parser_data);
 		return NULL;
 	}
 		
 	if (get_symbol(name, parser_data, 0) != NULL)
-		semerr("Duplicate variable names.", parser_data);
+		semerr("Duplicate variable names.", 0, parser_data);
 
 	SymbolTable *new = new_symbol_table_entry(name, attrs);
 
@@ -247,6 +247,7 @@ char *symbol_attribute_str(Symbol *symbol)
 	case PGPARAM: type_str = "param"; break;
 	case INT: type_str = "int"; break;
 	case REAL: type_str = "real"; break;
+	case BOOL: type_str = "bool"; break;
 	case ERR: type_str = "err"; break;
 	default: type_str = ""; break;
 	}

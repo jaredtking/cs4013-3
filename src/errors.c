@@ -43,15 +43,14 @@ void synerr(enum TokenType *expected, int len, struct MachineResult *found, stru
 	parser_data->result |= PARSER_RESULT_SYNERR;
 }
 
-void semerr(char *err, struct ParserData *parser_data)
+void semerr(char *err, int line_no, struct ParserData *parser_data)
 {
 	// output to console
-	fprintf (stderr, "%-8s%s on line %d: \"%s\"\n", "SEMERR", err, 0, "err");
+	fprintf (stderr, "%-8s%s on line %d\n", "SEMERR", err, line_no);
 
 	// listing file
 	if (parser_data->listing != NULL)
 		fprintf (parser_data->listing, "%-8s%-30s%s\n", "SEMERR", "", err);
 
-	parser_data->result |= PARSER_RESULT_LEXERR;
-
+	parser_data->result |= PARSER_RESULT_SEMERR;
 }

@@ -14,6 +14,6 @@ enum TokenType;
 
 void lexerr(struct MachineResult *result, struct ParserData *parser_data);
 void synerr(enum TokenType *expected, int len, struct MachineResult *found, struct ParserData *parser_data);
-void semerr(char *err, struct ParserData *parser_data);
+void semerr(char *err, int line, struct ParserData *parser_data);
 
 #endif

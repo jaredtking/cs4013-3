@@ -73,6 +73,7 @@ typedef struct ParserData
 #define PARSER_RESULT_OK 0
 #define PARSER_RESULT_LEXERR 1
 #define PARSER_RESULT_SYNERR 2
+#define PARSER_RESULT_SEMERR 4
 
 void parse(ParserData *parser_data);
 struct MachineResult *match(enum TokenType t, ParserData *parser_data);
@@ -101,20 +102,20 @@ void parse_compound_statement_(ParserData *parser_data);
 void parse_optional_statements(ParserData *parser_data);
 void parse_statement_list(ParserData *parser_data);
 void parse_statement_list_(ParserData *parser_data);
-void parse_statement(ParserData *parser_data);
+struct Attributes parse_statement(ParserData *parser_data);
 void parse_statement_(ParserData *parser_data);
-void parse_var(ParserData *parser_data);
-void parse_var_(ParserData *parser_data);
-void parse_expr_list(ParserData *parser_data);
-void parse_expr_list_(ParserData *parser_data);
-void parse_expr(ParserData *parser_data);
-void parse_expr_(ParserData *parser_data);
-void parse_simple_expr(ParserData *parser_data);
-void parse_simple_expr_(ParserData *parser_data);
-void parse_term(ParserData *parser_data);
-void parse_term_(ParserData *parser_data);
-void parse_factor(ParserData *parser_data);
-void parse_factor_(ParserData *parser_data);
+struct Attributes parse_var(ParserData *parser_data);
+void parse_var_(ParserData *parser_data, struct Attributes *v_);
+struct Attributes parse_expr_list(ParserData *parser_data);
+void parse_expr_list_(ParserData *parser_data, struct Attributes *el_);
+struct Attributes parse_expr(ParserData *parser_data);
+void parse_expr_(ParserData *parser_data, struct Attributes *e_);
+struct Attributes parse_simple_expr(ParserData *parser_data);
+void parse_simple_expr_(ParserData *parser_data, struct Attributes *se_);
+struct Attributes parse_term(ParserData *parser_data);
+void parse_term_(ParserData *parser_data, struct Attributes *t_);
+struct Attributes parse_factor(ParserData *parser_data);
+void parse_factor_(ParserData *parser_data, struct Attributes *f_);
 void parse_sign(ParserData *parser_data);
 
 void synch(Production prod, struct MachineResult *tok, ParserData *parser_data);
