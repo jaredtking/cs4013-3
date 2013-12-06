@@ -7,13 +7,13 @@ START_TEST (test_check_enter_method)
 	result = check_enter_method("hey", parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("hey", result->name);
-	ck_assert(result->type == PGNAME);
+	ck_assert(result->type.std_type == PGNAME);
 
 	result = check_enter_method("test", parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("test", result->name);
 	ck_assert_int_eq(1, result->fun);
-	ck_assert(result->type == NONE);
+	ck_assert(result->type.std_type == NONE);
 }
 END_TEST
 
@@ -41,11 +41,15 @@ START_TEST (test_check_add_var)
 
 	Symbol *result;
 
-	result = check_add_var("int", (Attributes){INT,0,0,NONE,0,0,0}, parser_data);
+	Attributes attrs = ATTRIBUTES_DEFAULT;
+
+	attrs.t.std_type = INT;
+	result = check_add_var("int", attrs, parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("int", result->name);
 
-	result = check_add_var("real", (Attributes){REAL,0,0,NONE,0,0,0}, parser_data);
+	attrs.t.std_type = REAL;
+	result = check_add_var("real", attrs, parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("real", result->name);
 
@@ -73,7 +77,9 @@ START_TEST (test_check_add_fun_param)
 
 	Symbol *result;
 
-	result = check_add_fun_param("fparam", (Attributes){INT,0,0,NONE,0,0,0}, parser_data);
+	Attributes attrs = ATTRIBUTES_DEFAULT;
+	attrs.t.std_type = INT;
+	result = check_add_fun_param("fparam", attrs, parser_data);
 	ck_assert(result != NULL);
 	ck_assert_str_eq("fparam", result->name);
 	ck_assert_int_eq(1, result->param);
@@ -92,10 +98,12 @@ START_TEST (test_get_symbol)
 
 	result = get_symbol("program", parser_data, 1);
 	ck_assert_str_eq("program", result->symbol->name);
-	ck_assert(result->symbol->type == PGNAME);
+	ck_assert(result->symbol->type.std_type == PGNAME);
 
 	// program.pvar
-	ck_assert(check_add_var("pvar", (Attributes){REAL,0,0,NONE,0,0,0}, parser_data) != NULL);	
+	Attributes attrs = ATTRIBUTES_DEFAULT;
+	attrs.t.std_type = REAL;
+	ck_assert(check_add_var("pvar", attrs, parser_data) != NULL);	
 
 	// program.fun
 	ck_assert(check_enter_method("fun", parser_data) != NULL);
@@ -103,14 +111,14 @@ START_TEST (test_get_symbol)
 	result = get_symbol("fun", parser_data, 1);
 	ck_assert_str_eq("fun", result->symbol->name);
 	ck_assert_int_eq(1, result->symbol->fun);
-	ck_assert(result->symbol->type == NONE);
+	ck_assert(result->symbol->type.std_type == NONE);
 
 	// check global search
 	ck_assert(get_symbol("pvar", parser_data, 0) == NULL);
 
 	result = get_symbol("pvar", parser_data, 1);
 	ck_assert_str_eq("pvar", result->symbol->name);
-	ck_assert(result->symbol->type == REAL);
+	ck_assert(result->symbol->type.std_type == REAL);
 
 	// exit program.fun
 	ck_assert(check_exit_method(parser_data) == 0);
@@ -124,15 +132,15 @@ START_TEST (test_set_method_type)
 {
 	ck_assert(check_enter_method("program", parser_data) != NULL);
 
-	set_method_type(INT, parser_data);
-	ck_assert(get_type("program", parser_data) == PGNAME);
+	set_method_type((Type){INT,0,0}, parser_data);
+	ck_assert(get_type("program", parser_data).std_type == PGNAME);
 
 	ck_assert(check_enter_method("fun", parser_data) != NULL);
 
-	set_method_type(INT, parser_data);
+	set_method_type((Type){INT,0,0}, parser_data);
 	SymbolTable *fun = get_symbol("fun", parser_data, 1);
 	ck_assert(fun != NULL);
-	ck_assert(fun->symbol->type == INT);
+	ck_assert(fun->symbol->type.std_type == INT);
 	ck_assert(fun->symbol->fun == 1);
 }
 END_TEST
@@ -157,9 +165,9 @@ START_TEST (test_get_type)
 
 	ck_assert(check_enter_method("fun", parser_data) != NULL);
 
-	set_method_type(INT, parser_data);
+	set_method_type((Type){INT,0,0}, parser_data);
 
-	ck_assert(get_type("fun", parser_data) == INT);
+	ck_assert(get_type("fun", parser_data).std_type == INT);
 }
 END_TEST
 
@@ -177,17 +185,42 @@ END_TEST
 
 START_TEST (test_get_param_type)
 {
-	ck_assert(get_param_type("fun", 2, parser_data) == NONE);
+	ck_assert(get_param_type("fun", 2, parser_data).std_type == NONE);
 
 	ck_assert(check_enter_method("program", parser_data) != NULL);
 
 	ck_assert(check_enter_method("fun", parser_data) != NULL);
 
-	ck_assert(check_add_fun_param("x", (Attributes){INT,0,0,NONE,0,0,0}, parser_data) != NULL);
-	ck_assert(check_add_fun_param("y", (Attributes){REAL,0,0,NONE,0,0,0}, parser_data) != NULL);
+	Attributes attrs = ATTRIBUTES_DEFAULT;
+	attrs.t.std_type = INT;
+	ck_assert(check_add_fun_param("x", attrs, parser_data) != NULL);
+	attrs.t.std_type = REAL;
+	ck_assert(check_add_fun_param("y", attrs, parser_data) != NULL);
 
-	ck_assert(get_param_type("fun", 0, parser_data) == INT);
-	ck_assert(get_param_type("fun", 1, parser_data) == REAL);
+	ck_assert(get_param_type("fun", 0, parser_data).std_type == INT);
+	ck_assert(get_param_type("fun", 1, parser_data).std_type == REAL);
+}
+END_TEST
+
+START_TEST (test_types_equal)
+{
+	Type a, b;
+
+	a = (Type){BOOL,0,0}; 
+	b = (Type){BOOL,0,0};
+	ck_assert_int_eq(1, types_equal(a,b));
+
+	a = (Type){INT,0,0}; 
+	b = (Type){REAL,0,0};
+	ck_assert_int_eq(0, types_equal(a,b));
+
+	a = (Type){AINT,0,30}; 
+	b = (Type){AINT,0,10};
+	ck_assert_int_eq(0, types_equal(a,b));
+
+	a = (Type){AINT,0,30}; 
+	b = (Type){AINT,0,30};
+	ck_assert_int_eq(1, types_equal(a,b));
 }
 END_TEST
 
@@ -214,6 +247,7 @@ Suite * symbol_table_suite (void)
 	tcase_add_test (tc_core, test_get_type);
 	tcase_add_test (tc_core, test_get_num_params);
 	tcase_add_test (tc_core, test_get_param_type);
+	tcase_add_test (tc_core, test_types_equal);
 
 	suite_add_tcase (s, tc_core);
 

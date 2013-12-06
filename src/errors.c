@@ -50,7 +50,7 @@ void semerr(char *err, int line_no, struct ParserData *parser_data)
 
 	// listing file
 	if (parser_data->listing != NULL)
-		fprintf (parser_data->listing, "%-8s%-30s%s\n", "SEMERR", "", err);
+		fprintf (parser_data->listing, "%-8s%s\n", "SEMERR", err);
 
 	parser_data->result |= PARSER_RESULT_SEMERR;
 }

@@ -63,6 +63,10 @@ MachineResult *get_next_token(ParserData *parser_data, int options)
 		// output line to listing file
 		if (parser_data->listing != NULL)
 			fprintf (parser_data->listing, "%-8d%s\n", i, line);
+
+		// skip blank lines
+		if (strcmp(l, "") == 0)
+			return get_next_token(parser_data, options);
 	}
 
 	MachineResult result = machine_omega(f, parser_data->reserved_words);

@@ -106,7 +106,7 @@ struct Attributes parse_statement(ParserData *parser_data);
 void parse_statement_(ParserData *parser_data);
 struct Attributes parse_var(ParserData *parser_data);
 void parse_var_(ParserData *parser_data, struct Attributes *v_);
-struct Attributes parse_expr_list(ParserData *parser_data);
+void parse_expr_list(ParserData *parser_data, struct Attributes *el);
 void parse_expr_list_(ParserData *parser_data, struct Attributes *el_);
 struct Attributes parse_expr(ParserData *parser_data);
 void parse_expr_(ParserData *parser_data, struct Attributes *e_);

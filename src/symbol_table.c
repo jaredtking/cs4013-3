@@ -13,10 +13,7 @@ SymbolTable *new_symbol_table_entry(char *name, Attributes attrs)
 	new->symbol->type = attrs.t;
 	new->symbol->fun = 0;
 	new->symbol->param = 0;
-	new->symbol->count = attrs.c;
-	new->symbol->array = attrs.a;
-	new->symbol->start = attrs.s;
-	new->symbol->end = attrs.e;
+	new->symbol->count = 0;
 
 	new->symbol->name = (char *)malloc(sizeof(name));
 	strcpy(new->symbol->name, name);
@@ -30,14 +27,17 @@ Symbol *check_enter_method(char *name, struct ParserData *parser_data)
 		semerr("Duplicate method names.", 0, parser_data);
 
 	SymbolTable *new;
+	Attributes attrs = ATTRIBUTES_DEFAULT;
 
-	// type: program name if first, otherwise function name
+	// program name if first entry to symbol table
 	if (parser_data->sym_eye == NULL)
-		new = new_symbol_table_entry(name, (Attributes){PGNAME,0,0,NONE,0,0,0});
-	else {
-		new = new_symbol_table_entry(name, (Attributes){NONE,0,0,NONE,0,0,0});
+		attrs.t.std_type = PGNAME;
+
+	new = new_symbol_table_entry(name, attrs);
+
+	// otherwise function name
+	if (parser_data->sym_eye != NULL)
 		new->symbol->fun = 1;
-	}
 
 	// new symbol table
 	if (parser_data->symbol_table == NULL) {
@@ -88,7 +88,7 @@ int check_exit_method(struct ParserData *parser_data)
 
 Symbol *check_add_prog_param(char *name, struct ParserData *parser_data)
 {
-	return check_add_var(name, (Attributes){PGPARAM,0,0,NONE,0,0,0}, parser_data);
+	return check_add_var(name, (Attributes){{PGPARAM,0,0},0,TYPE_DEFAULT,""}, parser_data);
 }
 
 Symbol *check_add_fun_param(char *name, Attributes attrs, struct ParserData *parser_data)
@@ -202,7 +202,7 @@ Type get_type(char *name, struct ParserData *parser_data)
 	if (symbol_entry != NULL)
 		return symbol_entry->symbol->type;
 
-	return NONE;
+	return TYPE_DEFAULT;
 }
 
 int get_num_params(char *name, struct ParserData *parser_data)
@@ -232,43 +232,56 @@ Type get_param_type(char *name, int n, struct ParserData *parser_data)
 			return curr->symbol->type;
 	}
 
-	return NONE;
+	return TYPE_DEFAULT;
 }
 
-char *symbol_attribute_str(Symbol *symbol)
+int types_equal(Type a, Type b)
 {
-	if (symbol->type == PGNAME)
-		return "";
+	if (a.std_type == b.std_type) {
+		if ((a.std_type == AINT || a.std_type == AREAL) && (a.start != b.start || a.end != b.end))
+			return 0;
 
-	char *type_str;
+		return 1;
+	}
 
-	switch (symbol->type)
+	return 0;
+}
+
+char *type_to_str(Type type)
+{
+	char *type_str, *type_str_2;
+	switch (type.std_type)
 	{
-	case PGPARAM: type_str = "param"; break;
-	case INT: type_str = "int"; break;
-	case REAL: type_str = "real"; break;
-	case BOOL: type_str = "bool"; break;
-	case ERR: type_str = "err"; break;
-	default: type_str = ""; break;
+	case PGNAME: return "pgm";
+	case PGPARAM: return "param";
+	case INT: return "int";
+	case REAL: return "real";
+	case BOOL: return "bool";
+	case AINT:
+	case AREAL:
+		type_str = (type.std_type == AINT) ? "int" : "real";
+		type_str_2 = (char *)malloc(100);
+		sprintf(type_str_2, "array [%d..%d] of %s", type.start, type.end, type_str);
+		return type_str_2;
+	case ERR: return "err";
+	default: return "";
 	}
+}
 
+char *symbol_type_to_str(Symbol *symbol)
+{
+	char *type_str = type_to_str(symbol->type);
 	char *type_str2 = type_str;
-
-	if (symbol->array == 1) {
-		type_str2 = (char *)malloc(100);
-		sprintf(type_str2, "%s array [%d..%d]", type_str, symbol->start, symbol->end);
-	}
 
 	if (symbol->fun == 1) {
 		type_str2 = (char *)malloc(100);
 		sprintf(type_str2, "%s, fun, %d arg(s)", type_str, symbol->count);
+	} else if (symbol->param == 1) {
+		type_str2 = (char *)malloc(100);
+		sprintf(type_str2, "%s, fun param", type_str);
 	}
 
-	char *param_str = (symbol->param == 1) ? ", fun param" : "";
-
-	char *str = (char *)malloc(100);
-	sprintf(str, "(%s%s)", type_str2, param_str);
-	return str;
+	return type_str2;
 }
 
 void output_symbol_table(FILE *f, SymbolTable *symbol_table, int level)
@@ -280,7 +293,7 @@ void output_symbol_table(FILE *f, SymbolTable *symbol_table, int level)
 		// indent
 		for (int l = 0; l < level; l++) fprintf (f, "  ");
 
-		fprintf (f, "%s %s\n", s->symbol->name, symbol_attribute_str(s->symbol));
+		fprintf (f, "%s (%s)\n", s->symbol->name, symbol_type_to_str(s->symbol));
 
 		// recurse children
 		output_symbol_table(f, s->child, level + 1);
@@ -291,8 +304,5 @@ void output_symbol_table(FILE *f, SymbolTable *symbol_table, int level)
 
 void fprint_symbol_table(FILE *f, SymbolTable *symbol_table)
 {
-	// symbol table file header
-	//fprintf (f, "%-5s%s\n", "Loc.", "ID");
-
 	output_symbol_table(f, symbol_table, 0);
 }

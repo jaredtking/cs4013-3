@@ -36,12 +36,6 @@ START_TEST (test_get_token)
 	next->next = next2;	
 	parser_data->reserved_words = reserved_words;
 
-	// symbol table
-	SymbolTable *symbol_table = (SymbolTable *)malloc(sizeof(SymbolTable));
-	symbol_table->symbol = NULL;
-	symbol_table->next = NULL;
-	parser_data->symbol_table = symbol_table;
-
 	// start checking tokens - program
 	MachineResult *res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
